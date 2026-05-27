@@ -2,6 +2,7 @@ import path from "path";
 
 const PORT = parseInt(process.env.PORT || "3000");
 const MDMBOX_URL = process.env.MDMBOX_URL || "http://localhost:3003";
+const MDMBOX_AUTH = process.env.MDMBOX_AUTH;
 const DIST_DIR = path.resolve(import.meta.dir, "../dist");
 
 const server = Bun.serve({
@@ -18,6 +19,12 @@ const server = Bun.serve({
 
       const headers = new Headers(req.headers);
       headers.delete("host");
+
+      // Inject auth server-side so credentials never reach the browser.
+      // Skip if the client already sent an Authorization header.
+      if (MDMBOX_AUTH && !headers.has("authorization")) {
+        headers.set("authorization", MDMBOX_AUTH);
+      }
 
       const res = await fetch(target, {
         method: req.method,

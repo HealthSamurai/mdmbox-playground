@@ -6,6 +6,10 @@ import { api } from "@/api/client";
 import type { PatientRow, PatientMatchRow, MatchingModel } from "@/api/types";
 import { paramsToObject } from "@/lib/utils";
 
+// Max candidate matches to request from $match. The table paginates over
+// these client-side, since the contract no longer paginates server-side.
+const MATCH_RESULT_LIMIT = 100;
+
 function fhirPatientToMatchRow(
   resource: Record<string, any>,
   duplicate: boolean,
@@ -56,17 +60,18 @@ export function MatchPage() {
     });
   }, [id]);
 
-  // Load match results when params change
+  // Load match results when matching params change. The $match contract no
+  // longer paginates server-side, so we fetch a capped set of candidates once
+  // and let the table page through them client-side (page/count below drive
+  // only the table, not the request).
   const fetchMatches = useCallback(async () => {
     if (!id || !model) return;
     setIsLoading(true);
     try {
       const response = await api.matchPatientById(id, {
-        page,
-        count,
+        count: MATCH_RESULT_LIMIT,
         model: model.id,
         threshold: effectiveThreshold,
-        projectionId: "proj-agg",
       });
       setData(
         response.results.map((r) =>
@@ -82,7 +87,7 @@ export function MatchPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [id, model?.id, effectiveThreshold, page, count]);
+  }, [id, model?.id, effectiveThreshold]);
 
   useEffect(() => {
     if (model) fetchMatches();

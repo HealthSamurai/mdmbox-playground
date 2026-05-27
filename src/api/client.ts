@@ -99,21 +99,20 @@ export const api = {
   async matchPatientById(
     id: string,
     params: {
-      page?: number;
       count?: number;
       model?: string;
       threshold?: number;
-      projectionId?: string;
     } = {}
   ) {
+    // The $match contract takes a FHIR Parameters body: only modelId,
+    // threshold, and count (a result cap). Server-side pagination is gone —
+    // we fetch up to `count` candidates and paginate client-side in the table.
     const result = await mdmbox.matchById({
       resourceType: "Patient",
       id,
       modelId: params.model,
       threshold: params.threshold,
-      page: params.page,
       count: params.count,
-      projectionId: params.projectionId,
     });
     return unwrap<{ resource: import("mdmbox-sdk").MatchResponse }>(result).resource;
   },
