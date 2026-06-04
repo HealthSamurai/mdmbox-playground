@@ -12,21 +12,18 @@ Built with React, Vite, Tailwind CSS, and [MDMbox](https://www.health-samurai.io
 ## Quick start
 
 ```bash
-git clone https://github.com/HealthSamurai/mdmbox-example-app.git
-cd mdmbox-example-app
-
 bun install
 
-# Start infrastructure (Postgres, MDMbox)
+# Start MDMbox
 docker compose up -d
 
-# Start the dev server
-bun dev
-```
+# Open http://localhost:3003 to finish the setup of MDMbox
 
-Then open http://localhost:3003 ("Welcome to MDMbox") and set things up
-through the UI — see [First run](#first-run) below. Once that's done, open
-http://localhost:3002 in your browser to use the app.
+# Start the example app
+bun dev
+
+# The app is available at http://localhost:3002
+```
 
 ## Infrastructure
 
@@ -36,22 +33,6 @@ http://localhost:3002 in your browser to use the app.
 |---|---|---|---|
 | `mdmbox-db` | `postgres:18` | 5438 | PostgreSQL database |
 | `mdmbox` | `healthsamurai/mdmbox:edge` | 3003 | MDMbox (matching engine + libox FHIR-proxy) |
-
-## First run
-
-The first time you start the stack, set MDMbox up through its own UI — no
-scripts required. Open http://localhost:3003 ("Welcome to MDMbox") and:
-
-1. **Activate the license** — go to `/admin` and activate the license.
-2. **Load sample patients** — import some patient data so there's something to
-   match against (e.g. the public `fake1000.ndjson.gz` dataset).
-3. **Create a matching model** — define a `MatchingModel` for `Patient`. The
-   app's model picker lists every Patient model it finds, defaulting to one
-   named `patient-model`.
-
-Everything above is done by clicking through the MDMbox UI. Once a Patient
-model exists and patients are loaded, the app at http://localhost:3002 is
-ready to use.
 
 ## Environment variables
 
