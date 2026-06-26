@@ -1,0 +1,85 @@
+{
+  "resourceType": "MatchingModel",
+  "id": "patient-example",
+
+  "resource": "Patient",
+
+  "thresholds": {
+    "certain": 20.0,
+    "probable": 8.0
+  },
+
+  "variable": [
+    {"name": "given",       "expression": "lower(#.resource #>> '{name,0,given,0}')"},
+    {"name": "family",      "expression": "lower(#.resource #>> '{name,0,family}')"},
+    {"name": "birth_date",  "expression": "(#.resource #>> '{birthDate}')"},
+    {"name": "gender",      "expression": "(#.resource #>> '{gender}')"},
+    {"name": "postal_code", "expression": "(#.resource #>> '{address,0,postalCode}')"},
+    {"name": "phone",       "expression": "regexp_replace(#.resource #>> '{telecom,0,value}', '[^0-9]', '', 'g')"},
+    {"name": "email",       "expression": "lower(#.resource #>> '{telecom,1,value}')"}
+  ],
+
+  "block": [
+    {"name": "birth_date_and_postal", "sql": "l.#birth_date = r.#birth_date AND l.#postal_code = r.#postal_code"},
+    {"name": "family_and_birth_date", "sql": "l.#family = r.#family AND l.#birth_date = r.#birth_date"},
+    {"name": "phone",                 "variable": "phone"},
+    {"name": "email",                 "variable": "email"},
+    {"name": "family_prefix",         "sql": "substr(l.#family, 1, 3) = substr(r.#family, 1, 3) AND l.#postal_code = r.#postal_code"}
+  ],
+
+  "feature": [
+    {
+      "name": "given",
+      "case": [
+        {"expression": "l.#given = r.#given",                                                                      "weight": 8.0},
+        {"expression": "l.#given IS NOT NULL AND r.#given IS NOT NULL AND levenshtein(l.#given, r.#given) <= 2",   "weight": 3.0},
+        {"else": -4.0}
+      ]
+    },
+    {
+      "name": "family",
+      "case": [
+        {"expression": "l.#family = r.#family",                                                                    "weight": 10.0},
+        {"expression": "l.#family IS NOT NULL AND r.#family IS NOT NULL AND levenshtein(l.#family, r.#family) <= 2", "weight": 4.0},
+        {"else": -5.0}
+      ]
+    },
+    {
+      "name": "birth_date",
+      "case": [
+        {"expression": "l.#birth_date = r.#birth_date",                                                            "weight": 12.0},
+        {"expression": "substr(l.#birth_date, 1, 7) = substr(r.#birth_date, 1, 7)",                                "weight": 4.0},
+        {"else": -6.0}
+      ]
+    },
+    {
+      "name": "gender",
+      "case": [
+        {"expression": "l.#gender = r.#gender",                                                                    "weight": 1.0},
+        {"else": -1.0}
+      ]
+    },
+    {
+      "name": "postal_code",
+      "case": [
+        {"expression": "l.#postal_code = r.#postal_code",                                                          "weight": 6.0},
+        {"expression": "substr(l.#postal_code, 1, 3) = substr(r.#postal_code, 1, 3)",                              "weight": 2.0},
+        {"else": -2.0}
+      ]
+    },
+    {
+      "name": "phone",
+      "case": [
+        {"expression": "l.#phone = r.#phone AND length(l.#phone) >= 7",                                            "weight": 10.0},
+        {"else": 0.0}
+      ]
+    },
+    {
+      "name": "email",
+      "case": [
+        {"expression": "l.#email = r.#email",                                                                      "weight": 12.0},
+        {"else": 0.0}
+      ]
+    }
+  ]
+}
