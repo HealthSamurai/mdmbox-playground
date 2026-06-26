@@ -1,34 +1,28 @@
-# mdmbox as an Aidbox App
+# MDMbox as an Aidbox App
 
-A single-page **notebook** (served by Bun, styled like mdmbox's `/welcome`) that:
+This example shows how to configure Aidbox to forward [$match](https://hl7.org/fhir/R4/patient-operation-match.html) requests to MDMbox. This is useful if you want to keep your whole FHIR API on one domain.
 
-1. **Registers an Aidbox App** which declares two operations — `POST Patient/$match`
-   and `POST $merge` — with its http-rpc endpoint pointing at mdmbox's built-in
-   `aidbox-app-proxy`.
-2. **Runs `$match` through Aidbox** — Aidbox routes the operation straight to
-   mdmbox, which runs the probabilistic match and returns the searchset Bundle.
-3. **Runs `$merge` through Aidbox** — Aidbox routes the operation to mdmbox's
-   `/api/$merge`, which executes the merge plan (a transaction Bundle).
+## Set Up Aidbox and MDMbox
 
-The Bun server only **registers the App** and provides the page. It is **not** in
-the match/merge request path.
+First of all, start Aidbox and MDMbox:
 
-## Flow
-
-```
-browser ──POST /fhir/Patient/$match──▶ Aidbox
-Aidbox  ──http-rpc──▶ mdmbox /api/aidbox-app-proxy → /api/fhir/Patient/$match
-Aidbox  ──Bundle──▶ browser
-
-browser ──POST /$merge──▶ Aidbox
-Aidbox  ──http-rpc──▶ mdmbox /api/aidbox-app-proxy → /api/$merge
-Aidbox  ──result──▶ browser
+```bash
+$ docker compose up
 ```
 
-mdmbox's proxy maps each operation `path` to `/api/<path…>`, so `["fhir","Patient","$match"]`
-becomes `/api/fhir/Patient/$match` and `["$merge"]` becomes `/api/$merge`.
+Once Aidbox is up and running, browse http://localhost:8888 and click "Continue with Aidbox account". This will automatically issue a developer license for you and redirect you back.
 
-The Aidbox App manifest registered in Cell 1:
+Then you do the same with MDMbox. Open http://localhost:3003 and click "Sign in to activate".
+
+You'll see the [Welcome to MDMBox](http://localhost:3003/welcome) page. Click your way through the setup steps to import sample patients and install a matching model.
+
+## Register MDMbox in Aidbox
+
+Open http://localhost:3300 and follow the instructions there. This is a notebook that'll guide you through the necessary steps to link MDMbox and Aidbox together and test the request forwarding.
+
+## How it works
+
+What the notebook above actually does is simply help you register MDMbox as an [App](https://www.health-samurai.io/docs/aidbox/developer-experience/apps) in Aidbox. You make a `PUT /App/mdmbox.match` request with a body like this:
 
 ```json
 {
@@ -38,51 +32,26 @@ The Aidbox App manifest registered in Cell 1:
   "type": "app",
   "endpoint": {
     "type": "http-rpc",
-    "url": "http://host.docker.internal:3003/api/aidbox-app-proxy",
-    "secret": "…"
+    "url": "http://mdmbox:3000/api/aidbox-app-proxy",
+    "secret": "mdmbox-match-secret"
   },
   "operations": {
-    "patient-match": { "method": "POST", "path": ["fhir", "Patient", "$match"] },
-    "patient-merge": { "method": "POST", "path": ["$merge"] }
+    "patient-match": {
+      "method": "POST",
+      "path": [
+        "fhir",
+        "Patient",
+        "$match"
+      ]
+    },
+    "patient-merge": {
+      "method": "POST",
+      "path": [
+        "$merge"
+      ]
+    }
   }
 }
 ```
 
-## Run with Docker Compose (recommended)
-
-```bash
-docker compose up
-```
-
-This brings up `aidbox-db`, `mdmbox`, `aidbox`, and the `notebook`. Open:
-
-- Notebook: http://localhost:3300
-- Aidbox:   http://localhost:8888  (admin: `admin` / `password`)
-- mdmbox:   http://localhost:3003
-
-In mdmbox, install the matching model (`patient-example`) and load some patients
-first — e.g. via the mdmbox `/welcome` page — then use the notebook's Cell 2.
-
-## Run the notebook in dev mode (Aidbox/mdmbox in Docker)
-
-```bash
-bun run dev
-```
-
-`dev` runs `bun --watch notebook.ts` with the env preset for a Dockerized stack
-(`APP_ENDPOINT_URL` points at mdmbox via `host.docker.internal`). Edit `notebook.ts`
-and it reloads; refresh the tab to see page changes. Without watch: `bun run start`.
-
-## Configuration (env)
-
-| Variable            | Default                                                   | Purpose                                          |
-| ------------------- | --------------------------------------------------------- | ------------------------------------------------ |
-| `PORT`              | `3300`                                                    | Notebook server port                             |
-| `AIDBOX_URL`        | `http://localhost:8888`                                   | Aidbox base URL (register App / call `$match`)   |
-| `PUBLIC_AIDBOX_URL` | `http://localhost:8888`                                   | Aidbox URL shown in the page text (display only) |
-| `AIDBOX_AUTH`       | `Basic cm9vdDpyb290` (root:root)                          | Auth for registering the App / calling `$match`  |
-| `MDMBOX_URL`        | `http://localhost:3003`                                   | mdmbox base URL (display only)                   |
-| `MODEL_ID`          | `patient-example`                                         | MatchingModel id used for `$match`               |
-| `APP_ENDPOINT_URL`  | `http://host.docker.internal:3003/api/aidbox-app-proxy`   | http-rpc endpoint Aidbox calls (mdmbox's proxy)  |
-| `APP_ID`            | `mdmbox.match`                                            | Aidbox App resource id                           |
-| `APP_SECRET`        | `mdmbox-match-secret`                                     | http-rpc shared secret                           |
+There you list which routes you operations you wish to be forwarded by Aidbox to the App.
