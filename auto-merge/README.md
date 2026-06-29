@@ -1,9 +1,9 @@
-# MDMbox Auto-Merge from an Aidbox Subscription
+# Auto-Merge
 
-This example shows how to subscribe to `Patient` create events in Aidbox and call
-MDMbox from a small Bun app. When a new patient is created, the app runs
-[$match](https://hl7.org/fhir/R4/patient-operation-match.html) with
-`onlySingleMatch` and, if MDMbox returns a match, calls `$merge`.
+This example shows how to configure Aidbox to notify an external app
+about new patients, and how this app communicates with MDMbox to check
+if the newly created patient is a duplicate, and if that's the case,
+automatically merge the two records.
 
 ## Set Up Aidbox and MDMbox
 
@@ -20,23 +20,15 @@ license for you and redirect you back.
 Then do the same with MDMbox. Open http://localhost:3003 and click
 "Sign in to activate".
 
-## Try the Auto-Merge Flow
+You'll see the [Welcome to MDMBox](http://localhost:3003/welcome)
+page. Click your way through the setup steps to import sample patients
+and install a matching model.
 
-Open http://localhost:3300 and follow the notebook.
+## Setup AidboxSubscriptionTopic and AidboxTopicDestination
 
-Click **Setup resources** first. The notebook creates the Aidbox subscription
-resources, creates a MDMbox API client, links an access policy, and loads
-`MatchingModel/patient-example` from `matching-model-patient.json`.
-
-Then click **Seed existing Jane Doe** to create a target record. After that,
-click **Create Patient in Aidbox**. Aidbox sends the create event to the Bun app,
-the app calls MDMbox `$match`, and if one match is returned, it calls `$merge`.
-
-For a clean demo, use a fresh database or keep one obvious target patient. The
-example sends `onlySingleMatch=true` because automatic merge needs one clear
-target. Otherwise the app would have to decide which candidate should survive.
-You can extend this example with a review queue where a person chooses the target
-patient before `$merge` is called.
+Open http://localhost:3300 and follow the instructions there. This is
+a notebook that'll show you how to configure Aidbox subscriptions and
+test the complete auto-merge flow.
 
 ## How it works
 
