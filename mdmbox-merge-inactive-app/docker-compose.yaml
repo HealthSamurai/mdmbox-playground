@@ -1,9 +1,11 @@
 services:
   mdmbox:
     image: healthsamurai/mdmbox:edge
-    pull_policy: every_4w
+    pull_policy: always
     depends_on:
       aidbox-db:
+        condition: service_healthy
+      aidbox:
         condition: service_healthy
     ports:
       - 3003:3000
@@ -45,7 +47,7 @@ services:
 
   aidbox-db:
     image: docker.io/library/postgres:18
-    pull_policy: every_4w
+    pull_policy: always
     ports:
       - "5439:5432"
     volumes:
@@ -66,7 +68,7 @@ services:
 
   aidbox:
     image: healthsamurai/aidboxone:latest
-    pull_policy: every_4w
+    pull_policy: always
     depends_on:
       aidbox-db:
         condition: service_healthy
@@ -110,7 +112,7 @@ services:
 
   notebook:
     image: oven/bun:1
-    pull_policy: every_4w
+    pull_policy: always
     depends_on:
       mdmbox:
         condition: service_healthy
