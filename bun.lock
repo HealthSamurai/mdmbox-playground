@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "mdmbox-example-app",
@@ -17,7 +16,7 @@
         "clsx": "^2.1.1",
         "date-fns": "^4.1.0",
         "lucide-react": "^0.469.0",
-        "mdmbox-sdk": "github:HealthSamurai/mdmbox-sdk",
+        "mdmbox-sdk": "github:HealthSamurai/mdmbox-sdk#2b62377",
         "react": "^19.1.2",
         "react-dom": "^19.1.2",
         "react-markdown": "^9.0.1",
@@ -639,7 +638,7 @@
 
     "mdast-util-to-string": ["mdast-util-to-string@4.0.0", "", { "dependencies": { "@types/mdast": "^4.0.0" } }, "sha512-0H44vDimn51F0YwvxSJSm0eCDOJTRlmN0R1yBh4HLj9wiV1Dn0QoXGbvFAWj2hSItVTlCmBF1hqKlIyUBVFLPg=="],
 
-    "mdmbox-sdk": ["mdmbox-sdk@github:HealthSamurai/mdmbox-sdk#f7e8a7b", { "dependencies": { "@health-samurai/aidbox-client": "0.0.0-alpha.1" } }, "HealthSamurai-mdmbox-sdk-f7e8a7b", "sha512-JGcEjwWKgcIbN4rHPqpzliDrBoTNCLxj/CetfkCpHwRgaMZU92wjNe5TO2HZCeVoLC4VpUNRKnoudjyizm+eFw=="],
+    "mdmbox-sdk": ["mdmbox-sdk@github:HealthSamurai/mdmbox-sdk#2b62377", { "dependencies": { "@health-samurai/aidbox-client": "0.0.0-alpha.1" } }, "HealthSamurai-mdmbox-sdk-2b62377"],
 
     "micromark": ["micromark@4.0.2", "", { "dependencies": { "@types/debug": "^4.0.0", "debug": "^4.0.0", "decode-named-character-reference": "^1.0.0", "devlop": "^1.0.0", "micromark-core-commonmark": "^2.0.0", "micromark-factory-space": "^2.0.0", "micromark-util-character": "^2.0.0", "micromark-util-chunked": "^2.0.0", "micromark-util-combine-extensions": "^2.0.0", "micromark-util-decode-numeric-character-reference": "^2.0.0", "micromark-util-encode": "^2.0.0", "micromark-util-normalize-identifier": "^2.0.0", "micromark-util-resolve-all": "^2.0.0", "micromark-util-sanitize-uri": "^2.0.0", "micromark-util-subtokenize": "^2.0.0", "micromark-util-symbol": "^2.0.0", "micromark-util-types": "^2.0.0" } }, "sha512-zpe98Q6kvavpCr1NPVSCMebCKfD7CA2NqZ+rykeNhONIJBpc1tFKt9hucLGwha3jNTNI8lHpctWJWoimVF4PfA=="],
 

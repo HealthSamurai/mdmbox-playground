@@ -79,11 +79,7 @@ export function MergeDetailPage() {
     try {
       const plan = await api.buildUnmergePlan(detail);
       const response = await api.unmergePreview(plan);
-      const payload = response.resource;
-      const outcomeParam = payload?.parameter?.find((p: any) => p.name === "outcome");
-      const outcome = outcomeParam?.resource;
-      const bundleParam = payload?.parameter?.find((p: any) => p.name === "bundle");
-      const bundle = bundleParam?.resource as TransactionBundle | undefined;
+      const { outcome, bundle } = response.resource;
       const msg =
         outcome?.issue?.[0]?.details?.text ??
         outcome?.issue?.[0]?.diagnostics ??

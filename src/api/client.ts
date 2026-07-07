@@ -290,51 +290,19 @@ export const api = {
   },
 
   async unmergePreview(plan: { source: string; target: string; entries: import("mdmbox-sdk").MergePlanEntry[]; taskId: string }) {
-    const result = await mdmbox.request<any>("/api/$unmerge", {
-      method: "POST",
-      body: JSON.stringify({
-        resourceType: "Parameters",
-        parameter: [
-          { name: "source", valueReference: { reference: plan.source } },
-          { name: "target", valueReference: { reference: plan.target } },
-          { name: "task", valueReference: { reference: `Task/${plan.taskId}` } },
-          { name: "preview", valueBoolean: true },
-          {
-            name: "plan",
-            resource: {
-              resourceType: "Bundle",
-              type: "transaction",
-              entry: plan.entries,
-            },
-          },
-        ],
-      }),
+    const result = await mdmbox.unmergePreview({
+      task: `Task/${plan.taskId}`,
+      entries: plan.entries,
     });
-    return unwrap<any>(result);
+    return unwrap<import("mdmbox-sdk").UnmergePreviewResponse>(result);
   },
 
   async unmerge(plan: { source: string; target: string; entries: import("mdmbox-sdk").MergePlanEntry[]; taskId: string }) {
-    const result = await mdmbox.request<any>("/api/$unmerge", {
-      method: "POST",
-      body: JSON.stringify({
-        resourceType: "Parameters",
-        parameter: [
-          { name: "source", valueReference: { reference: plan.source } },
-          { name: "target", valueReference: { reference: plan.target } },
-          { name: "task", valueReference: { reference: `Task/${plan.taskId}` } },
-          { name: "preview", valueBoolean: false },
-          {
-            name: "plan",
-            resource: {
-              resourceType: "Bundle",
-              type: "transaction",
-              entry: plan.entries,
-            },
-          },
-        ],
-      }),
+    const result = await mdmbox.unmerge({
+      task: `Task/${plan.taskId}`,
+      entries: plan.entries,
     });
-    return unwrap<any>(result);
+    return unwrap<import("mdmbox-sdk").UnmergeResponse>(result);
   },
 
   async getPatientSummary(id: string): Promise<PatientFullInfo> {
