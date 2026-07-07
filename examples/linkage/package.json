@@ -1,0 +1,10 @@
+{
+  "name": "mdmbox-linkage-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "AIDBOX_URL=http://localhost:8888 PUBLIC_AIDBOX_URL=http://localhost:8888 MDMBOX_URL=http://localhost:3003 PUBLIC_MDMBOX_URL=http://localhost:3003 bun --watch notebook.ts",
+    "start": "bun notebook.ts"
+  }
+}
