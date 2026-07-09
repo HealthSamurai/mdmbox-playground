@@ -2,10 +2,11 @@
  * mdmbox linkage notebook.
  *
  * Demonstrates the non-destructive `$link` / `$unlink` operations: two source
- * Patient records are grouped by a profiled `Linkage` resource. Neither source
- * is ever modified — unlike `$merge`, nothing is rewritten or deleted. The link
- * is then reversed with `$unlink`, which removes the Linkage and leaves both
- * sources untouched.
+ * Patient records are grouped by a profiled `Linkage` resource that also carries
+ * a golden (survivorship) view in its `contained`. Neither source is ever
+ * modified — unlike `$merge`, nothing is rewritten or deleted. The link is then
+ * reversed with `$unlink`, which removes the Linkage and leaves both sources
+ * untouched.
  */
 
 type JsonRecord = Record<string, any>;
@@ -136,6 +137,34 @@ function patientB(): JsonRecord {
   };
 }
 
+// The golden view: a survivorship record combining the best fields of both
+// sources. It lives *inside* the Linkage (`contained`), not as a stored
+// resource — it has a local `id` and carries no `meta.versionId/lastUpdated/
+// security`. mdmbox never recalculates it; the client owns it.
+const GOLDEN_ID = "golden";
+
+function goldenPatient(): JsonRecord {
+  return {
+    resourceType: "Patient",
+    id: GOLDEN_ID,
+    active: true,
+    // Survivorship: keep both source MRNs so the golden record traces back.
+    identifier: [
+      { system: "https://example.org/mrn", value: "MRN-1000" },
+      { system: "https://example.org/mrn", value: "MRN-2000" },
+    ],
+    name: [{ use: "official", given: ["Jane"], family: "Doe" }],
+    birthDate: "1985-04-12",
+    gender: "female",
+    // Both contact points survive (email from A, phone from B).
+    telecom: [
+      { system: "email", value: "jane.doe@example.org", use: "home" },
+      { system: "phone", value: "+1-555-0101", use: "mobile" },
+    ],
+    address: [{ city: "Boston", state: "MA", country: "US" }],
+  };
+}
+
 // Step 1 / Step 2: create a patient in Aidbox (PUT with explicit id = upsert).
 async function putPatient(patient: JsonRecord) {
   const id = requiredId(patient, "patient");
@@ -155,14 +184,16 @@ async function putPatient(patient: JsonRecord) {
 // Link: POST a profiled Linkage grouping the two records (no source modified)
 // ---------------------------------------------------------------------------
 function linkageResource(): JsonRecord {
-  // Exactly one `source` item (profile rule) plus `alternate` members. Both
-  // point at the untouched source Patients.
+  // The profile allows one contained golden view, named by the single `source`
+  // item (`#golden`). The untouched source Patients become `alternate` members.
   return {
     resourceType: "Linkage",
     meta: { profile: [LINKAGE_PROFILE] },
     active: true,
+    contained: [goldenPatient()],
     item: [
-      { type: "source", resource: { reference: A_REF } },
+      { type: "source", resource: { reference: `#${GOLDEN_ID}` } },
+      { type: "alternate", resource: { reference: A_REF } },
       { type: "alternate", resource: { reference: B_REF } },
     ],
   };
@@ -511,10 +542,12 @@ function renderPage(): string {
         <p class="muted">
           Groups <code>Patient/${escapeHtml(A_ID)}</code> and
           <code>Patient/${escapeHtml(B_ID)}</code> under one profiled
-          <code>Linkage</code>. The sources are not touched.
+          <code>Linkage</code> that also carries a <strong>golden view</strong>
+          in <code>contained</code> (referenced by the single <code>source</code>
+          item as <code>#${escapeHtml(GOLDEN_ID)}</code>). The sources are not touched.
         </p>
         <details class="disclosure">
-          <summary>Linkage in the plan</summary>
+          <summary>Linkage in the plan (with contained golden view)</summary>
           <pre class="code">${escapeHtml(linkageJson)}</pre>
         </details>
         <div class="actions">
@@ -534,7 +567,8 @@ function renderPage(): string {
       <div class="cell-body">
         <p class="muted">
           Reads the created <code>Linkage</code> back (search by member). Its
-          <code>item[]</code> references both patients; the patients themselves are unchanged.
+          <code>item[]</code> references both patients plus the contained golden
+          view; the patients themselves are unchanged.
         </p>
         <div class="actions">
           <button class="btn btn-primary" id="btn-4">GET Linkage?item=${escapeHtml(A_REF)}</button>

@@ -32,7 +32,7 @@ that walks through the linkage lifecycle in five steps:
 
 1. **POST `Patient/1`** — create the first source record.
 2. **POST `Patient/2`** — create the second source record (same person).
-3. **POST `$link`** — group both under one profiled `Linkage`.
+3. **POST `$link`** — group both under one profiled `Linkage` carrying a golden view.
 4. **GET `Linkage`** — read the created link back (sources untouched).
 5. **POST `$unlink`** — reverse the link; the Linkage is removed.
 
@@ -54,8 +54,23 @@ that creates a profiled `Linkage`:
     ]
   },
   "active": true,
+  "contained": [
+    {
+      "resourceType": "Patient",
+      "id": "golden",
+      "active": true,
+      "identifier": [
+        { "system": "https://example.org/mrn", "value": "MRN-1000" },
+        { "system": "https://example.org/mrn", "value": "MRN-2000" }
+      ],
+      "name": [{ "use": "official", "given": ["Jane"], "family": "Doe" }],
+      "birthDate": "1985-04-12",
+      "gender": "female"
+    }
+  ],
   "item": [
-    { "type": "source",    "resource": { "reference": "Patient/1" } },
+    { "type": "source",    "resource": { "reference": "#golden" } },
+    { "type": "alternate", "resource": { "reference": "Patient/1" } },
     { "type": "alternate", "resource": { "reference": "Patient/2" } }
   ]
 }
@@ -66,6 +81,39 @@ the **one active Linkage per reference** rule — trying to link a reference tha
 already belongs to an active Linkage returns `409 Conflict`. MDMbox wraps the
 plan with an audit `Task` (`code=link`) and `Provenance`, and executes it
 atomically. Neither `Patient/1` nor `Patient/2` is written.
+
+### Golden view in `contained`
+
+The dedicated profile allows a single **golden (survivorship) view** to live
+inside the Linkage's `contained`. It is named by the one `source` item as
+`#golden`; the linked sources become `alternate` members. The contained golden:
+
+- has a local `id` and is referenced as `#golden`;
+- carries no `meta.versionId`, `meta.lastUpdated`, or `meta.security`.
+
+MDMbox does not recalculate it — the client owns it and updates it in the same
+plan when the cluster changes. This keeps the merged representation alongside the
+link without ever rewriting the source records.
+
+### Navigating from a source to its Linkage
+
+The sources deliberately carry **no back-reference** to the Linkage. In FHIR the
+`Linkage` resource is the one that points at its members (`Linkage.item`), and
+there is no standard `Patient` element for the inverse — so keeping the sources
+untouched is both non-destructive and FHIR-consistent. To go from a source
+record to the link it belongs to, use a reverse search on the member reference:
+
+```
+GET Linkage?item=Patient/1
+```
+
+This is exactly what Step 4 does. Because the profile enforces **one active
+Linkage per reference**, that search returns the single active cluster a source
+currently belongs to — no stored pointer on the `Patient` is needed. (If you do
+want a materialized relationship, `Patient.link` with `type: "seealso"` between
+the duplicates, or a custom extension, would be added as a separate `PATCH`
+entry in the same plan — but that rewrites the sources and is outside this
+non-destructive example.)
 
 `$unlink` reverses it. It takes the link audit `Task` plus a reverse plan —
 here a single `DELETE` of the Linkage:
