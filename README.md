@@ -1,38 +1,27 @@
-# mdmbox-example-app
+# MDMbox Playground
 
-Example application demonstrating [mdmbox-sdk](https://github.com/HealthSamurai/mdmbox-sdk) usage — patient matching, merging, and deduplication on FHIR servers.
+A collection of examples that demonstrate the capabilities of [MDMbox](https://www.health-samurai.io/mdmbox).
 
-Built with React, Vite, Tailwind CSS, and [MDMbox](https://www.health-samurai.io/) as the FHIR backend (via its libox FHIR-proxy).
+## Set Up MDMbox
 
-## Prerequisites
-
-- [Docker](https://www.docker.com/) and Docker Compose
-- [Bun](https://bun.sh/) runtime
-
-## Quick start
+Clone this repository and run:
 
 ```bash
-bun install
-
-# Start MDMbox
-docker compose up -d
-
-# Open http://localhost:3003 to finish the setup of MDMbox
-
-# Start the example app
-bun dev
-
-# The app is available at http://localhost:3002
+$ docker compose up
 ```
 
-## Infrastructure
+Once MDMbox is up and running, browse http://localhost:3003 and click "Sign in to activate". This will automatically issue a developer license for you.
 
-`docker compose up -d` starts two services:
+## Examples
+
+Once MDMbox is set up, you can explore the `examples/` directory to discover MDMbox features and try out the examples that interest you.
+
+## Services
 
 | Service | Image | Port | Description |
 |---|---|---|---|
 | `mdmbox-db` | `postgres:18` | 5438 | PostgreSQL database |
-| `mdmbox` | `healthsamurai/mdmbox:edge` | 3003 | MDMbox (matching engine + libox FHIR-proxy) |
+| `mdmbox` | `healthsamurai/mdmbox:edge` | 3003 | MDMbox |
 
 ## Environment variables
 
@@ -40,31 +29,6 @@ bun dev
 |---|---|---|
 | `MDMBOX_URL` | `http://localhost:3003` | MDMbox API URL |
 | `PORT` | `3000` | Production server port |
-
-## Features
-
-- **Patient search** — search, filter, and paginate patients via FHIR search
-- **Duplicate matching** — find potential duplicates using MDMbox matching models with configurable thresholds
-- **Record merging** — side-by-side field comparison, reference relinking, merge preview and execution
-- **Merge history** — browse and inspect past merge operations with provenance details
-
-## Scripts
-
-| Script | Description |
-|---|---|
-| `bun run dev` | Start Vite dev server (port 3002) |
-| `bun run build` | Type-check and build for production |
-| `bun run serve` | Serve production build with Bun (port 3000) |
-| `bun run typegen` | Regenerate FHIR R4 type definitions |
-
-## Production
-
-```bash
-bun run build
-bun run serve
-```
-
-The production server proxies `/api/*` and `/fhir-server-api/*` to MDMbox, and serves the SPA from `dist/`.
 
 ## License
 
