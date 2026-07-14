@@ -150,7 +150,6 @@ function buildMatchParameters(patient: JsonRecord) {
       { name: "modelId", valueString: MODEL_ID },
       { name: "resource", resource: patient },
       { name: "onlySingleMatch", valueBoolean: true },
-      { name: "count", valueInteger: MATCH_RESULT_LIMIT },
     ],
   };
 }
@@ -239,7 +238,7 @@ async function runMdmboxMerge(plan: {
     entries: plan.entries,
     preview: false,
   });
-  const result = await mdmboxApi("/api/$merge", {
+  const result = await mdmboxApi("/api/fhir/$merge", {
     method: "POST",
     body,
   });

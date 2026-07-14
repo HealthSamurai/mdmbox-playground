@@ -1,0 +1,61 @@
+services:
+  notebook:
+    image: oven/bun:1
+    pull_policy: always
+    ports:
+      - 3300:3300
+    networks:
+      - mdmbox-playground
+    working_dir: /app
+    volumes:
+      - ./:/app:ro
+    command: ["bun", "notebook.ts"]
+    environment:
+      PORT: "3300"
+      # In-network service names (containers talk to each other directly).
+      AIDBOX_URL: http://aidbox:8080
+      PUBLIC_AIDBOX_URL: http://localhost:8888
+      AIDBOX_AUTH: "Basic cm9vdDpyb290"   # root:root
+      MDMBOX_URL: http://mdmbox:3000
+      PUBLIC_MDMBOX_URL: http://localhost:3003
+      MDMBOX_CLIENT_ID: mdmbox-automerge-client
+      MDMBOX_CLIENT_SECRET: mdmbox-automerge-secret
+      MODEL_ID: patient-example
+      WEBHOOK_SECRET: aidbox-to-bun-secret
+      AUTO_MERGE_HANDLER_APP_URL: http://auto-merge-handler-app:3301
+      PUBLIC_AUTO_MERGE_HANDLER_APP_URL: http://localhost:3301
+      # Endpoint Aidbox calls for AidboxTopicDestination webhook delivery —
+      # the standalone auto-merge handler app below, not the notebook UI.
+      WEBHOOK_ENDPOINT_URL: http://auto-merge-handler-app:3301/webhooks/patient-created
+
+  # Standalone auto-merge handler app: Aidbox calls it on Patient/create, and it runs
+  # $match + $merge against MDMbox.
+  auto-merge-handler-app:
+    image: oven/bun:1
+    pull_policy: always
+    ports:
+      - 3301:3301
+    networks:
+      - mdmbox-playground
+    working_dir: /app
+    volumes:
+      - ./:/app:ro
+    command: ["bun", "auto-merge-handler-app.ts"]
+    environment:
+      WEBHOOK_PORT: "3301"
+      # In-network service names (containers talk to each other directly).
+      AIDBOX_URL: http://aidbox:8080
+      AIDBOX_AUTH: "Basic cm9vdDpyb290"   # root:root
+      MDMBOX_URL: http://mdmbox:3000
+      MDMBOX_CLIENT_ID: mdmbox-automerge-client
+      MDMBOX_CLIENT_SECRET: mdmbox-automerge-secret
+      MODEL_ID: patient-example
+      WEBHOOK_SECRET: aidbox-to-bun-secret
+
+volumes:
+  aidbox_pg_data: {}
+
+networks:
+  mdmbox-playground:
+    external: true
+    name: mdmbox-playground

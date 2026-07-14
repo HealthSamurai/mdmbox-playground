@@ -9,11 +9,11 @@ services:
         condition: service_healthy
     ports:
       - 3003:3000
+    networks:
+      - mdmbox-playground
     environment:
       MDMBOX_AUTH_ENABLED: "false"
       MDMBOX_HTTP_HOST: "0.0.0.0"
-      MDMBOX_API_CLIENT_ID: mdmbox-automerge-client
-      MDMBOX_API_CLIENT_SECRET: mdmbox-automerge-secret
       BOX_DB_HOST: aidbox-db
       BOX_DB_PORT: "5432"
       BOX_DB_DATABASE: aidbox
@@ -52,6 +52,8 @@ services:
     pull_policy: always
     ports:
       - "5439:5432"
+    networks:
+      - mdmbox-playground
     volumes:
       - "aidbox_pg_data:/data"
     environment:
@@ -76,6 +78,8 @@ services:
         condition: service_healthy
     ports:
       - 8888:8080
+    networks:
+      - mdmbox-playground
     environment:
       BOX_ADMIN_PASSWORD: password
       BOX_BOOTSTRAP_FHIR_PACKAGES: hl7.fhir.r4.core#4.0.1
@@ -112,66 +116,9 @@ services:
       retries: 90
       start_period: 30s
 
-  notebook:
-    image: oven/bun:1
-    pull_policy: always
-    depends_on:
-      mdmbox:
-        condition: service_healthy
-      aidbox:
-        condition: service_healthy
-      auto-merge-handler-app:
-        condition: service_started
-    ports:
-      - 3300:3300
-    working_dir: /app
-    volumes:
-      - ./:/app:ro
-    command: ["bun", "notebook.ts"]
-    environment:
-      PORT: "3300"
-      # In-network service names (containers talk to each other directly).
-      AIDBOX_URL: http://aidbox:8080
-      PUBLIC_AIDBOX_URL: http://localhost:8888
-      AIDBOX_AUTH: "Basic cm9vdDpyb290"   # root:root
-      MDMBOX_URL: http://mdmbox:3000
-      PUBLIC_MDMBOX_URL: http://localhost:3003
-      MDMBOX_CLIENT_ID: mdmbox-automerge-client
-      MDMBOX_CLIENT_SECRET: mdmbox-automerge-secret
-      MODEL_ID: patient-example
-      WEBHOOK_SECRET: aidbox-to-bun-secret
-      AUTO_MERGE_HANDLER_APP_URL: http://auto-merge-handler-app:3301
-      PUBLIC_AUTO_MERGE_HANDLER_APP_URL: http://localhost:3301
-      # Endpoint Aidbox calls for AidboxTopicDestination webhook delivery —
-      # the standalone auto-merge handler app below, not the notebook UI.
-      WEBHOOK_ENDPOINT_URL: http://auto-merge-handler-app:3301/webhooks/patient-created
-
-  # Standalone auto-merge handler app: Aidbox calls it on Patient/create, and it runs
-  # $match + $merge against MDMbox.
-  auto-merge-handler-app:
-    image: oven/bun:1
-    pull_policy: always
-    depends_on:
-      mdmbox:
-        condition: service_healthy
-      aidbox:
-        condition: service_healthy
-    ports:
-      - 3301:3301
-    working_dir: /app
-    volumes:
-      - ./:/app:ro
-    command: ["bun", "auto-merge-handler-app.ts"]
-    environment:
-      WEBHOOK_PORT: "3301"
-      # In-network service names (containers talk to each other directly).
-      AIDBOX_URL: http://aidbox:8080
-      AIDBOX_AUTH: "Basic cm9vdDpyb290"   # root:root
-      MDMBOX_URL: http://mdmbox:3000
-      MDMBOX_CLIENT_ID: mdmbox-automerge-client
-      MDMBOX_CLIENT_SECRET: mdmbox-automerge-secret
-      MODEL_ID: patient-example
-      WEBHOOK_SECRET: aidbox-to-bun-secret
-
 volumes:
   aidbox_pg_data: {}
+
+networks:
+  mdmbox-playground:
+    name: mdmbox-playground
