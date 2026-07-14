@@ -5,42 +5,57 @@ source record. Instead of removing the duplicate, the merge plan PUTs it back
 with `active: false` and a `replaced-by` link to the surviving target, so the
 retired record stays queryable for audit and history.
 
-## Set Up Aidbox and MDMbox
+## Set Up MDMbox
 
-First of all, start Aidbox, MDMbox, and the notebook:
+Start MDMbox from the `standalone-examples` directory (see the
+[parent README](../README.md)):
 
 ```bash
 $ docker compose up
 ```
 
-Once Aidbox is up and running, browse http://localhost:8888 and click
-"Continue with Aidbox account". This will automatically issue a developer
-license for you and redirect you back.
-
-Then do the same with MDMbox. Open http://localhost:3003 and click
-"Sign in to activate".
-
-You'll see the [Welcome to MDMBox](http://localhost:3003/welcome)
-page. Click your way through the setup steps to import sample patients
-and install a matching model.
+Once MDMbox is up, browse http://localhost:3003 and click "Sign in to
+activate" — this issues a developer license automatically. Then walk through
+the [Welcome to MDMbox](http://localhost:3003/welcome) setup steps to install a
+matching model.
 
 ## Run the Merge Flow
 
-Open http://localhost:3300 and follow the instructions there. This is a notebook
-that walks through the deactivating `$merge` in five steps:
+The example is a plain Python script (standard library only — no dependencies):
 
-1. **POST `Patient/1`** — create the target (the survivor).
-2. **POST `Patient/2`** — create the source (the duplicate).
-3. **POST `$merge`** — merge `Patient/2` into `Patient/1`; the source is kept inactive.
-4. **GET `Patient/1`** — read back the merged survivor.
-5. **GET `Patient/2`** — read back the retired source (`active: false`).
+```bash
+$ python3 run.py
+```
+
+It prints each step and its request/response. The flow runs in four steps:
+
+1. **POST `/fhir-server-api`** — create the target (the survivor) and the
+   source (the duplicate) with one transaction Bundle.
+2. **POST `$merge`** — merge the source into the target; the source is kept
+   inactive instead of deleted.
+3. **GET the target** — read back the merged survivor.
+4. **GET the source** — read back the retired source.
 
 ## How it works
 
-The notebook first creates two patients in Aidbox via FHIR API. Then
-it sends a `$merge` request to MDMbox. `$merge` executes the transaction
-Bundle that the client sends, so deleting vs. deactivating is purely what
-the plan contains.  This example builds two `PUT` entries (no `DELETE`).
+The script first creates the two patients by POSTing a FHIR **transaction
+Bundle** to the MDMbox FHIR proxy at `/fhir-server-api`.
+
+```json
+{
+  "resourceType": "Bundle",
+  "type": "transaction",
+  "entry": [
+    { "request": { "method": "PUT", "url": "/Patient/1" }, "resource": { "resourceType": "Patient", "id": "1", "...": "..." } },
+    { "request": { "method": "PUT", "url": "/Patient/2" }, "resource": { "resourceType": "Patient", "id": "2", "...": "..." } }
+  ]
+}
+```
+
+Then it sends a `$merge` request to MDMbox (`/api/fhir/$merge`). `$merge`
+executes the transaction Bundle that the client sends, so deleting vs.
+deactivating is purely what the plan contains. This example builds two `PUT`
+entries (no `DELETE`).
 
 The first entry is the **surviving target** (target wins scalar conflicts,
 arrays are union-merged, missing target fields are filled from the source), plus

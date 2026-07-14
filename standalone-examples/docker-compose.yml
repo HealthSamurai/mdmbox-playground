@@ -4,6 +4,8 @@ services:
     pull_policy: every_4w
     ports:
       - "5438:5432"
+    networks:
+      - mdmbox-playground      
     volumes:
       - "mdmbox_pg_data:/data"
     environment:
@@ -28,6 +30,8 @@ services:
         condition: service_healthy
     ports:
       - 3003:3000
+    networks:
+      - mdmbox-playground      
     environment:
       MDMBOX_AUTH_ENABLED: "false"
       MDMBOX_UI_AUTH_ENABLED: "false"
@@ -68,3 +72,7 @@ services:
 
 volumes:
   mdmbox_pg_data: {}
+
+networks:
+  mdmbox-playground:
+    name: mdmbox-playground

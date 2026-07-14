@@ -8,3 +8,4 @@ dist
 .clj-kondo
 .lsp
 .claude
+__pycache__

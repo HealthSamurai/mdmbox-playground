@@ -6,7 +6,7 @@ Built with TypeScript, React, Vite, and Tailwind CSS.
 
 ## How to Start
 
-Make sure to start MDMbox by running `docker compose up` in the repo's root directory. Then run the following:
+Make sure to start MDMbox by running `docker compose up` in the parent directory. Then run the following:
 
 ```bash
 $ bun install
