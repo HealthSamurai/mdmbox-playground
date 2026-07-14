@@ -8,7 +8,7 @@ both sources exactly as they were.
 
 ## Set Up Aidbox and MDMbox
 
-First of all, start Aidbox, MDMbox, and the notebook:
+First of all, start Aidbox and MDMbox (see the [parent README](../README.md)):
 
 ```bash
 $ docker compose up
@@ -27,11 +27,16 @@ and install a matching model.
 
 ## Run the Linkage Flow
 
-Open http://localhost:3300 and follow the instructions there. This is a notebook
-that walks through the linkage lifecycle in five steps:
+The example is a plain Python script (standard library only — no dependencies):
 
-1. **POST `Patient/1`** — create the first source record.
-2. **POST `Patient/2`** — create the second source record (same person).
+```bash
+$ python3 run.py
+```
+
+It prints each step and its request/response. The flow runs in five steps:
+
+1. **PUT `Patient/<A>`** — create the first source record (in Aidbox).
+2. **PUT `Patient/<B>`** — create the second source record (same person).
 3. **POST `$link`** — group both under one profiled `Linkage` carrying a golden view.
 4. **GET `Linkage`** — read the created link back (sources untouched).
 5. **POST `$unlink`** — reverse the link; the Linkage is removed.
@@ -140,7 +145,3 @@ A profiled Linkage is fixed `active: true`, so it cannot be deactivated in
 place — unlink removes it (its history stays queryable via `/_history`). The
 original link `Task` is flipped `linked → unlinked`, and the references are free
 to be linked again.
-
-> **Note:** the notebook posts to `/api/fhir/$link` and `/api/fhir/$unlink`.
-> If your MDMbox build mounts these operations elsewhere, adjust the paths in
-> `notebook.ts`.
