@@ -1,0 +1,28 @@
+services:
+  # Standalone update handler: Aidbox calls it on Patient/update, and it rebuilds
+  # the golden view in the profiled Linkage the patient belongs to. Long-running.
+  # The driver (run.py) is run separately from the host: `python3 run.py`.
+  update-handler:
+    image: python:3.12-slim
+    pull_policy: always
+    ports:
+      - 3302:3302
+    networks:
+      - mdmbox-playground
+    working_dir: /app
+    volumes:
+      - ./:/app:ro
+    command: ["python", "update_handler.py"]
+    environment:
+      # Unbuffered stdout so `docker compose logs` shows request lines live.
+      PYTHONUNBUFFERED: "1"
+      WEBHOOK_PORT: "3302"
+      # In-network service names (containers talk to each other directly).
+      AIDBOX_URL: http://aidbox:8080
+      AIDBOX_AUTH: "Basic cm9vdDpyb290"   # root:root
+      WEBHOOK_SECRET: aidbox-to-handler-secret
+
+networks:
+  mdmbox-playground:
+    external: true
+    name: mdmbox-playground
