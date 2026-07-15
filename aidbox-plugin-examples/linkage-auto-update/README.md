@@ -5,38 +5,13 @@ This example links two Patient records under a profiled `Linkage` whose
 in sync automatically: whenever one of the source records is updated, an update
 handler app rebuilds the golden view in the Linkage.
 
-It combines the [linkage](../linkage) example (non-destructive `$link` with a
-contained golden view) with the [auto-merge](../auto-merge) pattern (an Aidbox
-webhook driving a handler app).
-
-## Set Up Aidbox and MDMbox
-
-First of all, start Aidbox and MDMbox (see the [parent README](../README.md)):
-
-```bash
-$ docker compose up
-```
-
-Once Aidbox is up and running, browse http://localhost:8888 and click "Continue
-with Aidbox account". This will automatically issue a developer license for you
-and redirect you back.
-
-Then do the same with MDMbox. Open http://localhost:3003 and click "Sign in to
-activate". Walk through the [Welcome to MDMBox](http://localhost:3003/welcome)
-setup: import sample patients and install the matching model.
-
 ## Start the Update Handler App
 
-The handler app is a **long-running service** — Aidbox calls it whenever a
-Patient is updated. Start it from this directory:
-
 ```bash
 $ docker compose up
 ```
 
-This runs `update_handler.py` (Python standard library only) as the
-`update-handler` service on the shared `mdmbox-playground` network, so Aidbox
-can reach it at `http://update-handler:3302`.
+This runs `update_handler.py` service that Aidbox will call whenever a Patient is updated.
 
 ## Run the Auto-Update Flow
 
