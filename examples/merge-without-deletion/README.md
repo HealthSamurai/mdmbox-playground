@@ -10,7 +10,7 @@ retired record stays queryable for audit and history.
 Start Aidbox and MDMbox (see the [parent README](../README.md)):
 
 ```bash
-$ docker compose up
+$ docker compose -f ../docker-compose.yaml up
 ```
 
 Once Aidbox is up, browse http://localhost:8888 and click "Continue with Aidbox

@@ -1,9 +1,9 @@
 # TokenIntrospector JWT Without an Aidbox User
 
 This example demonstrates API authentication when Aidbox and MDMbox share a
-database. MDMbox reads the same `TokenIntrospector` resources and accepts a JWT
-that passes Aidbox validation without requiring the token's `sub` to resolve to
-an Aidbox `User`.
+database. MDMbox reads the same `TokenIntrospector` resources and validates
+incoming JWTs against them itself — Aidbox is not in the request path — without
+requiring the token's `sub` to resolve to an Aidbox `User`.
 
 MDMbox does not evaluate Aidbox `AccessPolicy`. Once authentication is enabled,
 every successfully authenticated credential has the same access to protected
@@ -20,6 +20,12 @@ docker compose -f ../docker-compose.yaml -f docker-compose.yaml up -d
 
 Activate Aidbox at <http://localhost:8888> and MDMbox at
 <http://localhost:3003> if the development licenses have not been activated yet.
+
+> **Note:** recreating the MDMbox container resets its development activation
+> (Aidbox keeps its license in the shared database, MDMbox does not). The
+> override above recreates MDMbox, so expect to click "Sign in to activate"
+> again — API calls return `302` until you do. The same applies after switching
+> back to the regular stack.
 
 ## Run the Example
 
@@ -60,3 +66,7 @@ Stop the stack with:
 ```bash
 docker compose -f ../docker-compose.yaml -f docker-compose.yaml down
 ```
+
+To go back to the regular stack with MDMbox authentication disabled, run
+`docker compose up -d` from the parent `examples` directory and re-activate
+MDMbox once more.

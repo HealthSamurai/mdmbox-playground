@@ -5,13 +5,34 @@ This example links two Patient records under a profiled `Linkage` whose
 in sync automatically: whenever one of the source records is updated, an update
 handler app rebuilds the golden view in the Linkage.
 
+## Set Up Aidbox and MDMbox
+
+First of all, start Aidbox and MDMbox (see the [parent README](../README.md)):
+
+```bash
+$ docker compose -f ../docker-compose.yaml up
+```
+
+Once Aidbox is up and running, browse http://localhost:8888 and click "Continue
+with Aidbox account". This will automatically issue a developer license for you
+and redirect you back.
+
+Then do the same with MDMbox. Open http://localhost:3003 and click "Sign in to
+activate", and click your way through the
+[Welcome to MDMbox](http://localhost:3003/welcome) setup steps.
+
 ## Start the Update Handler App
+
+The handler is a **long-running service** — Aidbox calls it whenever a Patient
+is updated. Start it from this directory:
 
 ```bash
 $ docker compose up
 ```
 
-This runs `update_handler.py` service that Aidbox will call whenever a Patient is updated.
+This runs `update_handler.py` as the `update-handler` service on the shared
+`mdmbox-playground` network, so Aidbox can reach it at
+`http://update-handler:3302`.
 
 ## Run the Auto-Update Flow
 
@@ -20,6 +41,11 @@ The driver is a plain Python script (standard library only — no dependencies):
 ```bash
 $ python3 run.py
 ```
+
+> **Note:** if you ran the [auto-merge](../auto-merge) example before, remove
+> its webhook destination first (see its Cleanup section). Its handler reacts
+> to every Patient create, so it would merge — and delete — the two source
+> records this example creates before the update flow gets to run.
 
 It prints each step and its request/response, colored green for success and red
 for failure. The flow runs in eight steps:

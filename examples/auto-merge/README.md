@@ -11,7 +11,7 @@ duplicate, and if it is, sends the merge request — all automatically.
 First of all, start Aidbox and MDMbox (see the [parent README](../README.md)):
 
 ```bash
-$ docker compose up
+$ docker compose -f ../docker-compose.yaml up
 ```
 
 Once Aidbox is up and running, browse http://localhost:8888 and click "Continue
@@ -19,7 +19,7 @@ with Aidbox account". This will automatically issue a developer license for you
 and redirect you back.
 
 Then do the same with MDMbox. Open http://localhost:3003 and click "Sign in to
-activate". Walk through the [Welcome to MDMBox](http://localhost:3003/welcome)
+activate". Walk through the [Welcome to MDMbox](http://localhost:3003/welcome)
 setup: import sample patients and install the matching model.
 
 ## Start the Auto-Merge Handler App
@@ -102,7 +102,7 @@ request when the event is triggered — the auto-merge handler app:
     },
     {
       "name": "header",
-      "valueString": "Authorization: Bearer aidbox-to-bun-secret"
+      "valueString": "Authorization: Bearer aidbox-to-automerge-secret"
     }
   ]
 }
@@ -113,6 +113,18 @@ handler (`auto_merge_handler_app.py`) reads the new Patient, runs `$match`
 against MDMbox, and — if there is a single confident match — builds a merge plan
 (PUT the merged target + DELETE the source) and runs `$merge`. Every step is
 recorded in an in-memory flow log the driver polls via `/api/events`.
+
+## Cleanup
+
+The subscription stays active after the run: every new Patient keeps triggering
+the auto-merge handler, which can surprise the other examples (a freshly created
+duplicate gets matched, merged, and deleted automatically). When you are done,
+remove the webhook destination:
+
+```bash
+curl -X DELETE http://localhost:8888/fhir/AidboxTopicDestination/mdmbox-automerge-webhook \
+  -H 'Authorization: Basic cm9vdDpyb290'
+```
 
 ```mermaid
 sequenceDiagram

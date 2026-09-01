@@ -19,7 +19,7 @@ license for you and redirect you back.
 Then do the same with MDMbox. Open http://localhost:3003 and click
 "Sign in to activate".
 
-You'll see the [Welcome to MDMBox](http://localhost:3003/welcome)
+You'll see the [Welcome to MDMbox](http://localhost:3003/welcome)
 page. Click your way through the setup steps to import sample patients
 and install a matching model.
 

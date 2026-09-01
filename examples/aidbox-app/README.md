@@ -10,7 +10,7 @@ clients call Aidbox, and Aidbox forwards the operation to MDMbox over http-rpc.
 First of all, start Aidbox and MDMbox (see the [parent README](../README.md)):
 
 ```bash
-$ docker compose up
+$ docker compose -f ../docker-compose.yaml up
 ```
 
 Once Aidbox is up and running, browse http://localhost:8888 and click "Continue
@@ -20,7 +20,7 @@ and redirect you back.
 Then do the same with MDMbox. Open http://localhost:3003 and click "Sign in to
 activate".
 
-You'll see the [Welcome to MDMBox](http://localhost:3003/welcome) page. Click
+You'll see the [Welcome to MDMbox](http://localhost:3003/welcome) page. Click
 your way through the setup steps to import sample patients and install a
 matching model.
 

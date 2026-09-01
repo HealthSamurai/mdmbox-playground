@@ -24,7 +24,7 @@ services:
       MDMBOX_CLIENT_ID: mdmbox-automerge-client
       MDMBOX_CLIENT_SECRET: mdmbox-automerge-secret
       MODEL_ID: patient-example
-      WEBHOOK_SECRET: aidbox-to-bun-secret
+      WEBHOOK_SECRET: aidbox-to-automerge-secret
 
 networks:
   mdmbox-playground:

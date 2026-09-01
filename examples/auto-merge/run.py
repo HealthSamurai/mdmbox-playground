@@ -53,7 +53,7 @@ MDMBOX_URL = trim_slash(os.environ.get("MDMBOX_URL", "http://localhost:3003"))
 #     the handler's in-network name, e.g. http://auto-merge-handler-app:3301/...
 #   * AUTO_MERGE_HANDLER_APP_URL is where *this script* (on the host) reads the
 #     flow log -- the host-visible address, http://localhost:3301.
-WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "aidbox-to-bun-secret")
+WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "aidbox-to-automerge-secret")
 # Default to the handler's in-network name: Aidbox (in Docker) delivers the
 # webhook here, so this must resolve inside the compose network, not from the
 # host. Override with WEBHOOK_ENDPOINT_URL=http://host.docker.internal:3301/...

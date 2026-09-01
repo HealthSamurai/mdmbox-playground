@@ -17,11 +17,11 @@ Runs the flow end to end as a plain script:
   3. POST mdmbox $link -- group both under a profiled Linkage whose contained
      golden view unions their fields.
   4. PUT  /fhir/AidboxSubscriptionTopic/<id> -- topic for Patient/update.
-     POST /fhir/AidboxTopicDestination        -- webhook destination -> handler.
-  5. PUT Patient/<A> (updated) -- add a new field; this update fires the webhook,
+  5. POST /fhir/AidboxTopicDestination -- webhook destination -> handler.
+  6. PUT Patient/<A> (updated) -- add a new field; this update fires the webhook,
      and the handler rebuilds the Linkage's golden view.
-  6. GET handler /api/events?patientId=<A> -- poll until the rebuild finishes.
-  7. GET Linkage -- read the Linkage back and show the refreshed golden view.
+  7. GET handler /api/events?patientId=<A> -- poll until the rebuild finishes.
+  8. GET Linkage -- read the Linkage back and show the refreshed golden view.
 
 Fresh patient ids are generated on every run (override with A_ID / B_ID) so the
 "one active Linkage per reference" rule never conflicts. If any step fails the

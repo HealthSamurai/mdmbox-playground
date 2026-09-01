@@ -56,7 +56,7 @@ MODEL_ID = os.environ.get("MODEL_ID", "patient-example")
 MATCH_RESULT_LIMIT = int(os.environ.get("MATCH_RESULT_LIMIT", "1"))
 
 WEBHOOK_PATH = "/webhooks/patient-created"
-WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "aidbox-to-bun-secret")
+WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "aidbox-to-automerge-secret")
 
 # In-memory flow log. Guarded by _flows_lock since the server is threaded.
 _flows = []                 # newest first
