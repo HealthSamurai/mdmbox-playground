@@ -4,9 +4,13 @@ An example frontend app that demonstrates what a data steward UI may look like w
 
 Built with TypeScript, React, Vite, and Tailwind CSS.
 
+FHIR reads and searches go to the adjacent Aidbox instance. Matching, merge,
+and history operations go to MDMbox, which shares the Aidbox database.
+
 ## How to Start
 
-Make sure to start MDMbox by running `docker compose up` in the parent directory. Then run the following:
+Make sure Aidbox and MDMbox are running by running `docker compose up` in the
+parent directory. Then run the following:
 
 ```bash
 $ bun install

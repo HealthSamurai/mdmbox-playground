@@ -1,30 +1,26 @@
 services:
-  # Standalone auto-merge handler app: Aidbox calls it on Patient/create, and it
-  # runs $match + $merge against MDMbox. This is a long-running service.
+  # Long-running update handler: Aidbox calls it on Patient/update, and it
+  # rebuilds the golden view in the profiled Linkage the patient belongs to.
   # The driver (run.py) is run separately from the host: `python3 run.py`.
-  auto-merge-handler-app:
+  update-handler:
     image: python:3.12-slim
     pull_policy: always
     ports:
-      - 3301:3301
+      - 3302:3302
     networks:
       - mdmbox-playground
     working_dir: /app
     volumes:
       - ./:/app:ro
-    command: ["python", "auto_merge_handler_app.py"]
+    command: ["python", "update_handler.py"]
     environment:
       # Unbuffered stdout so `docker compose logs` shows request lines live.
       PYTHONUNBUFFERED: "1"
-      WEBHOOK_PORT: "3301"
+      WEBHOOK_PORT: "3302"
       # In-network service names (containers talk to each other directly).
       AIDBOX_URL: http://aidbox:8080
       AIDBOX_AUTH: "Basic cm9vdDpyb290"   # root:root
-      MDMBOX_URL: http://mdmbox:3000
-      MDMBOX_CLIENT_ID: mdmbox-automerge-client
-      MDMBOX_CLIENT_SECRET: mdmbox-automerge-secret
-      MODEL_ID: patient-example
-      WEBHOOK_SECRET: aidbox-to-bun-secret
+      WEBHOOK_SECRET: aidbox-to-handler-secret
 
 networks:
   mdmbox-playground:

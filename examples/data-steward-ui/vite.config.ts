@@ -4,21 +4,25 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
 export default defineConfig(({ mode }) => {
-  // vite only exposes VITE_-prefixed vars by default and never loads .env
-  // into process.env. Load all vars (empty prefix) so MDMBOX_URL/MDMBOX_AUTH
-  // from .env are available here.
+  // Vite only exposes VITE_-prefixed vars by default and never loads .env into
+  // process.env. Load all vars (empty prefix) so backend URLs and credentials
+  // from .env are available to the development proxy.
   const env = loadEnv(mode, process.cwd(), "");
+  const AIDBOX_URL = env.AIDBOX_URL || "http://localhost:8888";
+  const AIDBOX_AUTH = env.AIDBOX_AUTH;
   const MDMBOX_URL = env.MDMBOX_URL || "http://localhost:3003";
   const MDMBOX_AUTH = env.MDMBOX_AUTH;
 
-  // Inject the Authorization header into proxied MDMbox requests, mirroring
-  // the production proxy in server/index.ts. Without this, `bun dev` (vite)
-  // forwards requests with no auth and MDMbox returns 401 when auth is enabled.
-  const injectAuth = (proxy: { on: (e: string, cb: (...a: any[]) => void) => void }) => {
-    if (!MDMBOX_AUTH) return;
+  // Inject Authorization into proxied requests, mirroring the production
+  // proxy in server/index.ts without exposing credentials to the browser.
+  const injectAuth = (
+    proxy: { on: (e: string, cb: (...a: any[]) => void) => void },
+    auth?: string,
+  ) => {
+    if (!auth) return;
     proxy.on("proxyReq", (proxyReq: any) => {
       if (!proxyReq.getHeader("authorization")) {
-        proxyReq.setHeader("authorization", MDMBOX_AUTH);
+        proxyReq.setHeader("authorization", auth);
       }
     });
   };
@@ -58,12 +62,13 @@ export default defineConfig(({ mode }) => {
         "/api": {
           target: MDMBOX_URL,
           changeOrigin: true,
-          configure: (proxy) => injectAuth(proxy),
+          configure: (proxy) => injectAuth(proxy, MDMBOX_AUTH),
         },
         "/fhir-server-api": {
-          target: MDMBOX_URL,
+          target: AIDBOX_URL,
           changeOrigin: true,
-          configure: (proxy) => injectAuth(proxy),
+          rewrite: (path) => path.replace(/^\/fhir-server-api/, "/fhir"),
+          configure: (proxy) => injectAuth(proxy, AIDBOX_AUTH),
         },
       },
     },

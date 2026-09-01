@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """mdmbox as an Aidbox App -- register + run $match THROUGH Aidbox.
 
-This is the Aidbox-plugin flavour of the example, so the script deliberately
-talks to Aidbox: it registers an Aidbox App whose http-rpc endpoint points at
-mdmbox's built-in aidbox-app-proxy, then invokes $match through Aidbox (which
-forwards it to mdmbox).
+The script registers an Aidbox App whose http-rpc endpoint points at mdmbox's
+built-in aidbox-app-proxy, then invokes $match through Aidbox (which forwards
+it to mdmbox).
 
 Runs the flow end to end as a plain script:
 

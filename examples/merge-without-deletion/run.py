@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-"""mdmbox merge-without-deletion example (standalone).
+"""mdmbox merge-without-deletion example -- Aidbox + mdmbox.
 
-Everything goes through mdmbox -- the script never talks to Aidbox directly.
-Patients are created and read through the mdmbox FHIR proxy under
-/fhir-server-api; the merge is the mdmbox /api/$merge operation.
+Patients are created and read through Aidbox's FHIR API; the merge goes to the
+mdmbox /api/fhir/$merge operation. Both services share the same database.
 
 Runs the flow end to end as a plain script:
 
   1. Create the target (survives) and source (duplicate) patients with one
-     transaction Bundle POSTed to /fhir-server-api (PUT-upsert by id).
+     transaction Bundle POSTed to Aidbox /fhir (PUT-upsert by id).
   2. POST mdmbox $merge. The plan PUTs the source with active:false + a
      "replaced-by" link to the target -- the duplicate is retired, not
      deleted, so it stays queryable for audit/history.
@@ -36,13 +35,11 @@ def trim_slash(s: str) -> str:
     return s.rstrip("/")
 
 
-MDMBOX_URL = trim_slash(os.environ.get("MDMBOX_URL", "http://localhost:3003"))
-PUBLIC_MDMBOX_URL = trim_slash(os.environ.get("PUBLIC_MDMBOX_URL", "http://localhost:3003"))
-MDMBOX_AUTH = os.environ.get("MDMBOX_AUTH", "Basic cm9vdDpyb290")  # root:root
+AIDBOX_URL = trim_slash(os.environ.get("AIDBOX_URL", "http://localhost:8888"))
+AIDBOX_AUTH = os.environ.get("AIDBOX_AUTH", "Basic cm9vdDpyb290")  # root:root
 
-# The mdmbox FHIR proxy prefix. Patients are created (transaction Bundle) and
-# read (GET) through here.
-FHIR_PROXY = "/fhir-server-api"
+MDMBOX_URL = trim_slash(os.environ.get("MDMBOX_URL", "http://localhost:3003"))
+MDMBOX_AUTH = os.environ.get("MDMBOX_AUTH", "Basic cm9vdDpyb290")  # root:root
 
 # The mdmbox $merge operation (mounted under /api/fhir).
 MERGE_PATH = "/api/fhir/$merge"
@@ -70,8 +67,8 @@ def safe_json(text):
 def json_request(url, method="GET", auth=None, body=None):
     """Perform a JSON request. Never follows redirects.
 
-    mdmbox returns 302 -> "/" when it is not activated / needs login; following
-    it would replay the request against "/" in a loop. Surface it instead.
+    A 3xx means a service is probably not activated / needs login. Following it
+    would replay the request against "/" in a loop, so surface it instead.
     """
     headers = {"accept": "application/json"}
     data = None
@@ -113,8 +110,10 @@ def json_request(url, method="GET", auth=None, body=None):
                         + " -> "
                         + (location or "/")
                         + "). The service is most likely not activated or requires login. "
-                        + "Activate mdmbox at "
-                        + PUBLIC_MDMBOX_URL
+                        + "Activate Aidbox at "
+                        + AIDBOX_URL
+                        + " and mdmbox at "
+                        + MDMBOX_URL
                         + ", then retry."
                     )
                 },
@@ -128,7 +127,7 @@ def json_request(url, method="GET", auth=None, body=None):
 
 
 def mdmbox(path, method="GET", body=None):
-    """Call any mdmbox endpoint (e.g. /api/$merge)."""
+    """Call mdmbox (used for $merge)."""
     return json_request(
         MDMBOX_URL + (path if path.startswith("/") else "/" + path),
         method=method,
@@ -137,10 +136,14 @@ def mdmbox(path, method="GET", body=None):
     )
 
 
-# Patients are created and read through the mdmbox FHIR proxy under
-# /fhir-server-api -- the script never talks to Aidbox directly.
-def fhir_proxy(path, method="GET", body=None):
-    return mdmbox(FHIR_PROXY + "/" + path.lstrip("/"), method=method, body=body)
+# Patients are created and read through Aidbox's FHIR API.
+def aidbox_fhir(path, method="GET", body=None):
+    return json_request(
+        AIDBOX_URL + "/fhir/" + path.lstrip("/"),
+        method=method,
+        auth=AIDBOX_AUTH,
+        body=body,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -174,8 +177,8 @@ def source_patient():
     }
 
 
-# Step 1 & 2: create patients via a transaction Bundle POSTed to the mdmbox
-# FHIR proxy. Each entry is a PUT (upsert by id), so re-running is idempotent.
+# Step 1: create patients via a transaction Bundle POSTed to Aidbox. Each entry
+# is a PUT (upsert by id), so fixed ids remain idempotent across re-runs.
 def transaction_bundle(patients):
     return {
         "resourceType": "Bundle",
@@ -193,22 +196,22 @@ def transaction_bundle(patients):
 
 def create_patients(patients):
     body = transaction_bundle(patients)
-    result = fhir_proxy("", method="POST", body=body)
+    result = aidbox_fhir("", method="POST", body=body)
     return {
         "ok": result["ok"],
         "status": result["status"],
-        "request": {"method": "POST", "url": FHIR_PROXY, "body": body},
+        "request": {"method": "POST", "url": "/fhir", "body": body},
         "response": result["body"],
     }
 
 
-# Step 4 / Step 5: read a patient back through the mdmbox FHIR proxy.
+# Steps 3 and 4: read a patient back through Aidbox.
 def get_patient(pid):
-    result = fhir_proxy("Patient/" + urllib.parse.quote(pid, safe=""))
+    result = aidbox_fhir("Patient/" + urllib.parse.quote(pid, safe=""))
     return {
         "ok": result["ok"],
         "status": result["status"],
-        "request": {"method": "GET", "url": FHIR_PROXY + "/Patient/" + pid},
+        "request": {"method": "GET", "url": "/fhir/Patient/" + pid},
         "response": result["body"],
     }
 
@@ -288,7 +291,7 @@ def build_merge_parameters(source, target, entries, preview):
     }
 
 
-# Step 3: mdmbox $merge.
+# Step 2: mdmbox $merge.
 def run_merge(source_id, target_id):
     source_id = str(source_id or SOURCE_ID).strip()
     target_id = str(target_id or TARGET_ID).strip()
@@ -296,12 +299,12 @@ def run_merge(source_id, target_id):
         return {"ok": False, "status": 400,
                 "error": "Both source and target Patient ids are required."}
 
-    source_read = fhir_proxy("Patient/" + urllib.parse.quote(source_id, safe=""))
+    source_read = aidbox_fhir("Patient/" + urllib.parse.quote(source_id, safe=""))
     if not source_read["ok"]:
         return {"ok": False, "status": source_read["status"],
                 "error": "Source Patient/{} not found".format(source_id),
                 "response": source_read["body"]}
-    target_read = fhir_proxy("Patient/" + urllib.parse.quote(target_id, safe=""))
+    target_read = aidbox_fhir("Patient/" + urllib.parse.quote(target_id, safe=""))
     if not target_read["ok"]:
         return {"ok": False, "status": target_read["status"],
                 "error": "Target Patient/{} not found".format(target_id),
@@ -495,18 +498,17 @@ def step(num, title, result):
 
 
 def main():
-    print("mdmbox merge-without-deletion example (standalone)")
-    print("mdmbox: {}".format(MDMBOX_URL))
-    print("  create/read patients: {}{}".format(MDMBOX_URL, FHIR_PROXY))
-    print("  merge:                {}{}".format(MDMBOX_URL, MERGE_PATH))
+    print("mdmbox merge-without-deletion example")
+    print("Aidbox: {}  (create/read patients)".format(AIDBOX_URL))
+    print("mdmbox: {}  ($merge)".format(MDMBOX_URL))
     print("target Patient/{} survives, source Patient/{} is deactivated"
           .format(TARGET_ID, SOURCE_ID))
 
     # Step 1: create both patients in one transaction Bundle.
     step(
         1,
-        "POST {} (transaction Bundle: Patient/{} + Patient/{})".format(
-            FHIR_PROXY, TARGET_ID, SOURCE_ID),
+        "POST Aidbox /fhir (transaction Bundle: Patient/{} + Patient/{})".format(
+            TARGET_ID, SOURCE_ID),
         create_patients([target_patient(), source_patient()]),
     )
 

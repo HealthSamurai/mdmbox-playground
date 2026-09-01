@@ -7,9 +7,8 @@ records are grouped by a profiled Linkage resource that also carries a golden
 unlike $merge, nothing is rewritten or deleted. The link is then reversed with
 $unlink, which removes the Linkage and leaves both sources untouched.
 
-This is the Aidbox-plugin flavour of the example: patients and the Linkage are
-created/read through Aidbox's FHIR API, while the $link / $unlink operations go
-to mdmbox (which shares the same database).
+Patients and the Linkage are created/read through Aidbox's FHIR API, while the
+$link / $unlink operations go to mdmbox (which shares the same database).
 
 Runs the flow end to end as a plain script:
 
