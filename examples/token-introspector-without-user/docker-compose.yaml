@@ -1,0 +1,4 @@
+services:
+  mdmbox:
+    environment:
+      MDMBOX_AUTH_ENABLED: "true"
