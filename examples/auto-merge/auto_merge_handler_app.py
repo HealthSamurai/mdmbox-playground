@@ -219,10 +219,16 @@ def process_patient_created(notification, patient_ref):
     patient_id = required_id(patient_ref, "notification patient")
     with _flows_lock:
         existing = _flow_by_patient_id.get(patient_id)
-        if existing and existing["status"] in ("no-match", "merged", "error"):
-            add_step(existing, "duplicate delivery ignored", True)
+        if existing:
+            # AidboxTopicDestination is at-least-once and can redeliver while
+            # the first request is still being processed. Reusing a nonterminal
+            # flow must not start a second $match/$merge against the same
+            # resource versions: that races the original merge and turns an
+            # otherwise successful delivery into an If-Match conflict.
+            existing["duplicateDeliveries"] = existing.get("duplicateDeliveries", 0) + 1
+            existing["updatedAt"] = now()
             return existing
-        flow = existing or new_flow(patient_id, notification)
+        flow = new_flow(patient_id, notification)
 
     flow["status"] = "received"
     flow["notification"] = notification
@@ -403,6 +409,7 @@ def new_flow(patient_id, notification):
         "startedAt": now(),
         "updatedAt": now(),
         "notification": notification,
+        "duplicateDeliveries": 0,
         "steps": [],
     }
     _flows.insert(0, flow)
