@@ -27,16 +27,15 @@ function unwrap<T>(result: { isErr(): boolean; value: any }): T {
 }
 
 async function fhirRead<T = any>(type: string, id: string): Promise<T> {
-  const result = await mdmbox.read<T>({ resourceType: type, id });
-  return unwrap<{ resource: T }>(result).resource;
+  return aidboxFhir<T>(`${type}/${encodeURIComponent(id)}`);
 }
 
 async function fhirSearch(
   type: string,
   params: [string, string][]
 ): Promise<{ entries: any[]; total?: number }> {
-  const result = await mdmbox.search<any>({ resourceType: type, params });
-  const bundle = unwrap<{ resource: any }>(result).resource;
+  const query = new URLSearchParams(params).toString();
+  const bundle = await aidboxFhir<any>(`${type}?${query}`);
   return {
     entries: bundle.entry?.map((e: any) => e.resource) ?? [],
     total: bundle.total,
@@ -44,8 +43,22 @@ async function fhirSearch(
 }
 
 async function fhirReadReference<T = any>(reference: string): Promise<T> {
-  const result = await mdmbox.readReference<T>({ reference });
-  return unwrap<{ resource: T }>(result).resource;
+  return aidboxFhir<T>(reference);
+}
+
+async function aidboxFhir<T>(path: string): Promise<T> {
+  const response = await fetch(`/aidbox-fhir/${path.replace(/^\//, "")}`, {
+    headers: { Accept: "application/json" },
+  });
+  const resource = await response.json();
+  if (!response.ok) {
+    const message =
+      resource?.issue?.[0]?.details?.text ??
+      resource?.issue?.[0]?.diagnostics ??
+      `Aidbox FHIR request failed with HTTP ${response.status}`;
+    throw Object.assign(new Error(message), { outcome: resource });
+  }
+  return resource as T;
 }
 
 // ==================== Flatten ====================

@@ -48,8 +48,8 @@ const server = Bun.serve({
       );
     }
 
-    if (url.pathname.startsWith("/fhir-server-api")) {
-      const fhirPath = url.pathname.replace(/^\/fhir-server-api/, "/fhir");
+    if (url.pathname.startsWith("/aidbox-fhir")) {
+      const fhirPath = url.pathname.replace(/^\/aidbox-fhir/, "/fhir");
       return proxyRequest(
         req,
         `${AIDBOX_URL}${fhirPath}${url.search}`,

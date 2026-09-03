@@ -113,10 +113,6 @@ def mdmbox_api(path, method="GET", body=None):
                         method=method, auth=MDMBOX_APP_AUTH, body=body)
 
 
-def mdmbox_server_fhir(path, method="GET", body=None):
-    return mdmbox_api("/fhir-server-api/" + path.lstrip("/"), method=method, body=body)
-
-
 def assert_ok(result, label):
     if result["ok"]:
         return result
@@ -129,10 +125,6 @@ def assert_ok(result, label):
 # ---------------------------------------------------------------------------
 def read_aidbox_patient(pid):
     return aidbox_fhir("Patient/" + urllib.parse.quote(pid, safe=""))
-
-
-def read_mdmbox_patient(pid):
-    return mdmbox_server_fhir("Patient/" + urllib.parse.quote(pid, safe=""))
 
 
 # ---------------------------------------------------------------------------
@@ -263,10 +255,10 @@ def process_patient_created(notification, patient_ref):
             return finish_flow(flow)
 
         target_read = assert_ok(
-            read_mdmbox_patient(matched["id"]),
-            "Read matched Patient/{} from mdmbox".format(matched["id"]))["body"]
+            read_aidbox_patient(matched["id"]),
+            "Read matched Patient/{} from Aidbox".format(matched["id"]))["body"]
         flow["matchedPatient"] = target_read
-        add_step(flow, "matched patient read from mdmbox", True, {
+        add_step(flow, "matched patient read from Aidbox", True, {
             "id": target_read.get("id"),
             "versionId": (target_read.get("meta") or {}).get("versionId"),
         })
@@ -283,8 +275,8 @@ def process_patient_created(notification, patient_ref):
         flow["mergeResponse"] = merge_result["body"]
         assert_ok(merge_result, "$merge")
         merged_patient = assert_ok(
-            read_mdmbox_patient(plan["target"].split("Patient/", 1)[-1]),
-            "Read merged {} from mdmbox".format(plan["target"]))["body"]
+            read_aidbox_patient(plan["target"].split("Patient/", 1)[-1]),
+            "Read merged {} from Aidbox".format(plan["target"]))["body"]
         flow["mergedPatient"] = merged_patient
         flow["status"] = "merged"
         add_step(flow, "$merge applied", True, {

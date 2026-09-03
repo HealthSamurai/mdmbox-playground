@@ -64,10 +64,10 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           configure: (proxy) => injectAuth(proxy, MDMBOX_AUTH),
         },
-        "/fhir-server-api": {
+        "/aidbox-fhir": {
           target: AIDBOX_URL,
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/fhir-server-api/, "/fhir"),
+          rewrite: (path) => path.replace(/^\/aidbox-fhir/, "/fhir"),
           configure: (proxy) => injectAuth(proxy, AIDBOX_AUTH),
         },
       },
