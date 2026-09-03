@@ -2,3 +2,20 @@ services:
   mdmbox:
     environment:
       MDMBOX_AUTH_ENABLED: "true"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.3
+    command:
+      - start-dev
+      - --import-realm
+      - --hostname=http://keycloak:8080
+    ports:
+      - "8081:8080"
+    networks:
+      - mdmbox-playground
+    volumes:
+      - ./token-introspector-without-user/keycloak-realm.json:/opt/keycloak/data/import/mdmbox-example-realm.json:ro
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    mem_limit: 768m

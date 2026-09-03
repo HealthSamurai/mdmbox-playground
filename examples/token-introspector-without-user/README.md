@@ -1,31 +1,26 @@
-# TokenIntrospector JWT Without an Aidbox User
+# Keycloak JWT Without an Aidbox User
 
-This example demonstrates API authentication when Aidbox and MDMbox share a
-database. MDMbox reads the same `TokenIntrospector` resources and validates
-incoming JWTs against them itself — Aidbox is not in the request path — without
-requiring the token's `sub` to resolve to an Aidbox `User`.
+This example runs Keycloak, obtains an RS256 access token, and configures an Aidbox `TokenIntrospector` with the Keycloak realm's issuer and JWKS endpoint. MDMbox accepts the token even though its `sub` does not resolve to an Aidbox `User`.
 
-MDMbox does not evaluate Aidbox `AccessPolicy`. Once authentication is enabled,
-every successfully authenticated credential has the same access to protected
-MDMbox API endpoints.
+The example intentionally does not set `BOX_SECURITY_INTROSPECTION_CREATE_USER`. No user synchronization is required for MDMbox API authentication.
 
-## Start Aidbox and MDMbox
+MDMbox does not evaluate Aidbox `AccessPolicy`. Once authentication is enabled, every successfully authenticated credential has the same access to protected MDMbox API endpoints.
 
-From this directory, start the shared Aidbox and MDMbox stack with the local
-override that enables MDMbox authentication:
+## Start the Example Stack
+
+From this directory, start Aidbox, MDMbox, and the preconfigured Keycloak realm:
 
 ```bash
 docker compose -f ../docker-compose.yaml -f docker-compose.yaml up -d
 ```
 
-Activate Aidbox at <http://localhost:8888> and MDMbox at
-<http://localhost:3003> if the development licenses have not been activated yet.
+The example uses these local endpoints:
 
-> **Note:** recreating the MDMbox container resets its development activation
-> (Aidbox keeps its license in the shared database, MDMbox does not). The
-> override above recreates MDMbox, so expect to click "Sign in to activate"
-> again — API calls return `302` until you do. The same applies after switching
-> back to the regular stack.
+- Keycloak: <http://localhost:8081>
+- Aidbox: <http://localhost:8888>
+- MDMbox: <http://localhost:3003>
+
+Activate Aidbox and MDMbox on the first start if their development licenses have not been activated yet. API calls return `302` until activation is complete. MDMbox stores the issued license in the database and reuses it when the container is recreated.
 
 ## Run the Example
 
@@ -35,31 +30,16 @@ The driver uses only the Python standard library:
 python3 run.py
 ```
 
-It performs five steps:
+It performs six steps:
 
-1. creates a temporary HS256 `TokenIntrospector` through Aidbox;
-2. confirms that the JWT subject has no corresponding `User`;
-3. calls `GET /api/models` on MDMbox with a valid JWT and expects `200`;
-4. repeats the call with a bad signature and expects `401`;
-5. removes the temporary `TokenIntrospector`.
+1. obtains an RS256 service-account token from Keycloak;
+2. creates a temporary `TokenIntrospector` using the token's `iss` and the realm's JWKS endpoint;
+3. confirms that the JWT subject has no corresponding Aidbox `User`;
+4. calls `GET /api/models` on MDMbox with the valid JWT and expects `200`;
+5. tampers with the JWT signature and expects MDMbox to return `401`;
+6. removes the temporary `TokenIntrospector`.
 
-HS256 keeps the example self-contained. A Keycloak deployment normally uses
-the same contract with an RS256 introspector and Keycloak's JWKS endpoint:
-
-```json
-{
-  "resourceType": "TokenIntrospector",
-  "id": "keycloak",
-  "type": "jwt",
-  "jwt": {
-    "iss": "https://keycloak.example/realms/my-realm"
-  },
-  "jwks_uri": "https://keycloak.example/realms/my-realm/protocol/openid-connect/certs"
-}
-```
-
-No `User/<sub>` resource or user synchronization is required for MDMbox API
-authentication.
+The Keycloak realm and confidential client are declared in [`keycloak-realm.json`](keycloak-realm.json). The container imports that realm on startup, so no manual Keycloak configuration is needed.
 
 Stop the stack with:
 
@@ -67,6 +47,4 @@ Stop the stack with:
 docker compose -f ../docker-compose.yaml -f docker-compose.yaml down
 ```
 
-To go back to the regular stack with MDMbox authentication disabled, run
-`docker compose up -d` from the parent `examples` directory and re-activate
-MDMbox once more.
+To go back to the regular stack with MDMbox authentication disabled, run `docker compose up -d` from the parent `examples` directory.

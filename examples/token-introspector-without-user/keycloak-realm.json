@@ -1,0 +1,19 @@
+{
+  "realm": "mdmbox-example",
+  "enabled": true,
+  "sslRequired": "none",
+  "clients": [
+    {
+      "clientId": "mdmbox-api",
+      "name": "MDMbox API example",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "mdmbox-example-secret",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
+    }
+  ]
+}
