@@ -2541,9 +2541,7 @@
 
 ## Schema Collisions
 
-The following canonicals have multiple schema versions with different content.
-To inspect collision versions, export TypeSchemas using `.introspection({ typeSchemas: 'path' })`
-and check `<pkg>/collisions/<name>/1.json, 2.json, ...` files.
+The following canonicals have multiple schema versions with different content. To inspect collision versions, export TypeSchemas using `.introspection({ typeSchemas: 'path' })` and check `<pkg>/collisions/<name>/1.json, 2.json, ...` files.
 
 ### `shared`
 
