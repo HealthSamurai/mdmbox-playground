@@ -69,7 +69,7 @@ Patients are created and read through Aidbox's FHIR API. The `$link` and `$unlin
 }
 ```
 
-The profile marks the Linkage as MDMbox-managed and defines the namespace for the **one active Linkage per reference** rule — trying to link a reference that already belongs to an active Linkage returns `409 Conflict`. MDMbox wraps the plan with an audit `Task` (`code=link`) and `Provenance`, and executes it atomically. Neither `Patient/1` nor `Patient/2` is written.
+The profile marks the Linkage as MDMbox-managed and defines the namespace for the **one active Linkage per reference** rule — trying to link a reference that already belongs to an active Linkage returns `409 Conflict`. MDMbox wraps the plan with an audit `Task` (`code=link`), `Provenance`, and an operation `AuditEvent`, and executes it atomically. Neither `Patient/1` nor `Patient/2` is written.
 
 ### Golden view in `contained`
 
