@@ -1,6 +1,6 @@
 services:
   mdmbox:
-    image: healthsamurai/mdmbox:edge
+    image: healthsamurai/mdmbox:2608
     pull_policy: always
     depends_on:
       aidbox-db:
@@ -71,7 +71,7 @@ services:
       start_period: 10s
 
   aidbox:
-    image: healthsamurai/aidboxone:latest
+    image: healthsamurai/aidboxone:2608.4
     pull_policy: always
     depends_on:
       aidbox-db:

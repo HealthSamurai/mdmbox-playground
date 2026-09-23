@@ -2,6 +2,8 @@
 
 All examples use MDMbox alongside Aidbox. The two services share an Aidbox database, so examples can use Aidbox's FHIR API for resources and MDMbox's API for master-data-management operations.
 
+The Compose example uses MDMbox `2608` with Aidbox `2608.4`. The monthly MDMbox tag follows that month's latest minor; run `docker compose pull` and recreate the containers to update. Use an exact published `YYMM.N` tag when you need a fixed version. `edge` is a development image and is not used by these examples.
+
 ## Set Up Aidbox and MDMbox
 
 From this directory, start Aidbox and MDMbox:
