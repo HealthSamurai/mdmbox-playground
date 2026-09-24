@@ -1,0 +1,295 @@
+name: mdmbox-playground-empi
+
+x-box-settings: &box-settings
+  BOX_BOOTSTRAP_FHIR_PACKAGES: hl7.fhir.r4.core#4.0.1
+  BOX_DB_DATABASE: aidbox
+  BOX_DB_HOST: db
+  BOX_DB_PASSWORD: postgres
+  BOX_DB_PORT: "5432"
+  BOX_DB_USER: postgres
+  BOX_FHIR_BUNDLE_EXECUTION_VALIDATION_MODE: limited
+  BOX_FHIR_COMPLIANT_MODE: "true"
+  BOX_FHIR_CORRECT_AIDBOX_FORMAT: "true"
+  BOX_FHIR_SCHEMA_VALIDATION: "true"
+  BOX_FHIR_SEARCH_AUTHORIZE_INLINE_REQUESTS: "true"
+  BOX_FHIR_SEARCH_CHAIN_SUBSELECT: "true"
+  BOX_FHIR_SEARCH_COMPARISONS: "true"
+  BOX_FHIR_SEARCH_ENGINE: jsonpath
+  BOX_FHIR_SEARCH_INCLUDE_CONFORMANT: "true"
+  BOX_SECURITY_DEV_MODE: "true"
+  BOX_SETTINGS_MODE: read-write
+
+services:
+  db:
+    image: postgres:18
+    shm_size: "1g"
+    ports:
+      - "127.0.0.1:5440:5432"
+    environment:
+      PGDATA: /data
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: aidbox
+      POSTGRES_INITDB_ARGS: --data-checksums
+    command: >
+      postgres
+      -c shared_preload_libraries=pg_stat_statements
+      -c max_wal_size=4GB
+      -c wal_compression=on
+    volumes:
+      - postgres-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d aidbox"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+      start_period: 5s
+
+  clickhouse:
+    image: ${CLICKHOUSE_IMAGE:-clickhouse/clickhouse-server:25.8}
+    ports:
+      - "127.0.0.1:8124:8123"
+    environment:
+      CLICKHOUSE_DB: analytics
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: showcase
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8123/ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+      start_period: 5s
+
+  interbox-db-init:
+    image: postgres:18
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: postgres
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - >
+        psql -h db -U postgres -d postgres -tAc
+        "SELECT 1 FROM pg_database WHERE datname = 'interbox'"
+        | grep -qx 1
+        || psql -h db -U postgres -d postgres -c "CREATE DATABASE interbox"
+
+  clickhouse-module:
+    image: curlimages/curl:8.16.0
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - >
+        test -s /modules/topic-destination-clickhouse-2604.0.jar ||
+        curl -fL
+        https://storage.googleapis.com/aidbox-modules/topic-destination-clickhouse/topic-destination-clickhouse-2604.0.jar
+        -o /modules/topic-destination-clickhouse-2604.0.jar
+    volumes:
+      - aidbox-modules:/modules
+
+  aidbox:
+    image: ${AIDBOX_IMAGE:-healthsamurai/aidboxone:2608.4}
+    depends_on:
+      db:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      clickhouse-module:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:8890:8080"
+    entrypoint:
+      - /bin/sh
+      - -c
+      - '[ -z "$$AIDBOX_LICENSE" ] && unset AIDBOX_LICENSE; exec /aidbox.sh'
+    environment:
+      <<: *box-settings
+      AIDBOX_LICENSE: ${AIDBOX_LICENSE:-}
+      BOX_ADMIN_PASSWORD: showcase
+      BOX_ROOT_CLIENT_ID: root
+      BOX_ROOT_CLIENT_SECRET: showcase
+      BOX_MODULE_LOAD: io.healthsamurai.topic-destination.clickhouse.core
+      BOX_MODULE_JAR: /modules/topic-destination-clickhouse-2604.0.jar
+      BOX_WEB_BASE_URL: http://localhost:8890
+      BOX_WEB_PORT: "8080"
+    volumes:
+      - aidbox-modules:/modules:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "test \"$$(curl -sS -o /dev/null -w '%{http_code}' http://localhost:8080/health)\" = 200",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 90
+      start_period: 30s
+
+  mdmbox:
+    image: ${MDMBOX_IMAGE:-healthsamurai/mdmbox:2608.0}
+    depends_on:
+      db:
+        condition: service_healthy
+      interbox-db-init:
+        condition: service_completed_successfully
+      aidbox:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3005:3000"
+    environment:
+      <<: *box-settings
+      MDMBOX_LICENSE: ${MDMBOX_LICENSE:-}
+      MDMBOX_AUTH_ENABLED: "false"
+      MDMBOX_DEFAULT_FHIR_RELEASE: 4.0.1
+      MDMBOX_HTTP_HOST: 0.0.0.0
+      MDMBOX_HTTP_PORT: "3000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:3000/readyz | grep -q '\"status\":\"ready\"'",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 90
+      start_period: 60s
+
+  mdm-adapter:
+    build:
+      context: .
+      dockerfile: adapter/Dockerfile
+    image: mdmbox-playground-empi-adapter:local
+    depends_on:
+      aidbox:
+        condition: service_healthy
+      mdmbox:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8091:8091"
+    environment:
+      AIDBOX_URL: http://aidbox:8080
+      AIDBOX_USER: root
+      AIDBOX_PASSWORD: showcase
+      MDMBOX_URL: http://mdmbox:3000
+      MDM_MATCHING_MODEL: showcase-patient
+      MDM_ADAPTER_TOKEN: ${MDM_ADAPTER_TOKEN:-showcase-adapter}
+    stop_grace_period: 90s
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://localhost:8091/health').then(r => process.exit(r.ok ? 0 : 1))"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  interbox-workspace-init:
+    image: oven/bun:1.3.12
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        rm -rf /workspace/src
+        cp -R /seed/src /workspace/src
+        cp /seed/package.json /seed/bun.lock /workspace/
+        chown -R 1000:1000 /workspace
+    volumes:
+      - ./interbox:/seed:ro
+      - interbox-workspace:/workspace
+
+  interbox:
+    image: ${INTERBOX_IMAGE:-healthsamurai/interbox:main-d39e2f23a90c@sha256:81926d8f9608a0bc440295f7f211a77c17b85aca1ee5e23d52c80db50b5a91e0}
+    depends_on:
+      db:
+        condition: service_healthy
+      aidbox:
+        condition: service_healthy
+      mdmbox:
+        condition: service_healthy
+      interbox-db-init:
+        condition: service_completed_successfully
+      interbox-workspace-init:
+        condition: service_completed_successfully
+      mdm-adapter:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3011:3001"
+      - "127.0.0.1:2576:2575"
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/interbox
+      MLLP_HOST: 0.0.0.0
+      MLLP_PORT: "2575"
+      INTERBOX_WORKSPACE_GIT_URL: file:///workspace
+      INTERBOX_WORKSPACE_POLL_MS: "2000"
+      INTERBOX_AUTH_ENABLED: "false"
+      INTERBOX_PUBLIC_URL: http://localhost:3011
+      INTERBOX_AIDBOX_REQUEST_TIMEOUT_MS: "60000"
+      MDM_ADAPTER_URL: http://mdm-adapter:8091
+      MDM_ADAPTER_TOKEN: ${MDM_ADAPTER_TOKEN:-showcase-adapter}
+      AIDBOX_URL: http://aidbox:8080
+      AIDBOX_CLIENT_ID: root
+      AIDBOX_CLIENT_SECRET: showcase
+      INTERBOX_LICENSE: ${INTERBOX_LICENSE:-}
+      CLAUDE_CODE_OAUTH_TOKEN: ""
+      ANTHROPIC_API_KEY: ""
+    volumes:
+      - interbox-workspace:/workspace
+
+  portal:
+    build:
+      context: portal
+    image: mdmbox-playground-empi-portal:local
+    depends_on:
+      aidbox:
+        condition: service_healthy
+      mdmbox:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8090:3000"
+    environment:
+      AIDBOX_URL: http://aidbox:8080
+      AIDBOX_USER: root
+      AIDBOX_PASSWORD: showcase
+      CLICKHOUSE_URL: http://clickhouse:8123
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: showcase
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 15s
+
+  grafana:
+    build:
+      context: grafana
+      args:
+        GRAFANA_IMAGE: ${GRAFANA_IMAGE:-grafana/grafana:12.4.1}
+    image: mdmbox-playground-empi-grafana:local
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3002:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_USERS_DEFAULT_THEME: dark
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/dashboards/mdm-real-world.json
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  postgres-data:
+  clickhouse-data:
+  aidbox-modules:
+  grafana-data:
+  interbox-workspace:

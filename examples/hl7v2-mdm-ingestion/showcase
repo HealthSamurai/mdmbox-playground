@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+set -euo pipefail
+showcase_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$showcase_dir"
+env_file="${SHOWCASE_ENV_FILE:-$showcase_dir/.env}"
+[[ -f "$env_file" ]] || env_file="$showcase_dir/.env.example"
+compose=(docker compose --project-name mdmbox-playground-empi --env-file "$env_file" -f "$showcase_dir/docker-compose.yml")
+
+die() { echo "ERROR: $*" >&2; exit 1; }
+ensure_tools() {
+  for tool in docker bun curl; do
+    command -v "$tool" >/dev/null 2>&1 || die "Required tool not found: $tool"
+  done
+  docker compose version >/dev/null
+}
+ensure_env() {
+  [[ "$env_file" != "$showcase_dir/.env.example" ]] || die "Copy .env.example to .env and supply the three licenses first."
+  for key in AIDBOX_LICENSE MDMBOX_LICENSE INTERBOX_LICENSE; do
+    awk -F= -v key="$key" '$1 == key && length($2) > 20 { found=1 } END { exit !found }' "$env_file" || die "$key is missing from $env_file"
+  done
+}
+run_script() { bun --env-file="$env_file" "scripts/$1" "${@:2}"; }
+wait_http() {
+  local name="$1" url="$2"
+  for ((i=0; i<180; i++)); do
+    if curl -fsS --max-time 3 "$url" >/dev/null 2>&1; then echo "ready: $name"; return; fi
+    sleep 2
+  done
+  "${compose[@]}" ps
+  die "$name did not become ready: $url"
+}
+wait_interbox() {
+  for ((i=0; i<120; i++)); do
+    local status
+    status="$(curl -fsS --max-time 3 http://localhost:3011/api/stats/system 2>/dev/null || true)"
+    if grep -Eq '"mappers":[1-9][0-9]*' <<<"$status" && grep -Eq '"senders":[1-9][0-9]*' <<<"$status" && grep -Eq '"sources":[1-9][0-9]*' <<<"$status" \
+      && "${compose[@]}" exec -T interbox bun -e 'const s = require("node:net").connect(2575, "127.0.0.1"); s.setTimeout(1000); s.on("connect", () => { s.destroy(); process.exit(0); }); s.on("error", () => process.exit(1)); s.on("timeout", () => process.exit(1));' >/dev/null 2>&1; then
+      echo "ready: Interbox pipeline"; return
+    fi
+    sleep 2
+  done
+  die "Interbox pipeline is not ready; inspect ./showcase logs interbox"
+}
+up() {
+  ensure_tools
+  ensure_env
+  "${compose[@]}" stop interbox mdm-adapter
+  "${compose[@]}" build mdm-adapter portal grafana
+  "${compose[@]}" up -d db clickhouse aidbox mdmbox
+  wait_http Aidbox http://localhost:8890/health
+  wait_http MDMbox http://localhost:3005/readyz
+  run_script bootstrap.ts
+  "${compose[@]}" up -d
+  wait_interbox
+  wait_http "MDM adapter" http://localhost:8091/health
+  wait_http Portal http://localhost:8090
+  wait_http Grafana http://localhost:3002/api/health
+}
+clear_data() {
+  ensure_tools
+  ensure_env
+  local was_running=0 result=0
+  [[ -z "$("${compose[@]}" ps --status running -q interbox)" ]] || was_running=1
+  "${compose[@]}" stop interbox mdm-adapter
+  "${compose[@]}" exec -T db psql -v ON_ERROR_STOP=1 -U postgres -d interbox -c \
+    "DELETE FROM interbox.ingestion_queue; DELETE FROM interbox.hl7v2_in; DELETE FROM interbox.resource_hash; DELETE FROM interbox.webhook_outbox;" || result=$?
+  if ((result == 0)); then run_script clear-data.ts || result=$?; fi
+  if ((was_running)); then "${compose[@]}" start mdm-adapter interbox; wait_interbox; fi
+  return "$result"
+}
+case "${1:-help}" in
+  up) up ;;
+  demo) up; run_script seed.ts "${2:-100}"; run_script verify-data.ts ;;
+  bootstrap) ensure_env; "${compose[@]}" stop interbox mdm-adapter; run_script bootstrap.ts; "${compose[@]}" start mdm-adapter interbox; wait_interbox ;;
+  seed) run_script seed.ts "${2:-100}" ;;
+  verify) run_script verify-data.ts ;;
+  verify-protocol) run_script verify-protocol.ts ;;
+  verify-adapter) run_script verify-adapter.ts ;;
+  verify-delivery) run_script verify-delivery.ts ;;
+  check-analytics) bun --env-file="$env_file" test scripts/analytics.test.ts ;;
+  check)
+    ensure_tools
+    bash -n showcase
+    "${compose[@]}" config --quiet
+    (cd interbox && bun install --frozen-lockfile && bun test && bun run typecheck)
+    (cd portal && npm ci && npm test && npm run lint)
+    ;;
+  clear) clear_data ;;
+  status) "${compose[@]}" ps ;;
+  logs) shift; "${compose[@]}" logs -f "$@" ;;
+  down) "${compose[@]}" down ;;
+  reset) "${compose[@]}" down --volumes --remove-orphans ;;
+  help|--help|-h)
+    echo "Usage: ./showcase [up|demo [count]|seed [count]|verify|verify-protocol|verify-adapter|verify-delivery|check|check-analytics|bootstrap|clear|status|logs [service]|down|reset]"
+    echo "up keeps data. demo runs up + seed + verify. reset deletes this example's volumes."
+    ;;
+  *) die "Unknown command: $1. Run ./showcase --help." ;;
+esac

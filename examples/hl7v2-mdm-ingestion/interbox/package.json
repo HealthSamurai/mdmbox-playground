@@ -1,0 +1,18 @@
+{
+  "name": "mdmbox-hl7v2-ingestion-interbox",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "interbox-cli": "interbox"
+  },
+  "dependencies": {
+    "@health-samurai/interbox": "1.22.1"
+  },
+  "devDependencies": {
+    "@types/bun": "1.2.19",
+    "typescript": "5.9.3"
+  }
+}

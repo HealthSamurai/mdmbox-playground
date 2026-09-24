@@ -1,0 +1,6 @@
+.env
+artifacts/
+facade-dashboard/
+**/node_modules/
+portal/.vinext/
+portal/dist/

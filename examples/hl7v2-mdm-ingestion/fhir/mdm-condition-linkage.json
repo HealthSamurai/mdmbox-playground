@@ -1,0 +1,30 @@
+{
+  "resourceType": "StructureDefinition",
+  "id": "mdm-condition-linkage",
+  "url": "https://mdm.health-samurai.io/fhir/StructureDefinition/mdm-condition-linkage",
+  "version": "0.1.0",
+  "name": "ShowcaseConditionLinkage",
+  "title": "Showcase Condition Linkage",
+  "status": "draft",
+  "fhirVersion": "4.0.1",
+  "kind": "resource",
+  "abstract": false,
+  "type": "Linkage",
+  "baseDefinition": "http://hl7.org/fhir/StructureDefinition/Linkage",
+  "derivation": "constraint",
+  "description": "Example-owned grouping of source Conditions by code and onset inside one Patient cluster.",
+  "differential": {
+    "element": [
+      {"id": "Linkage", "path": "Linkage"},
+      {"id": "Linkage.active", "path": "Linkage.active", "min": 1, "fixedBoolean": true},
+      {"id": "Linkage.contained", "path": "Linkage.contained", "max": "0"},
+      {"id": "Linkage.item", "path": "Linkage.item", "min": 2, "slicing": {"discriminator": [{"type": "value", "path": "type"}], "rules": "closed"}},
+      {"id": "Linkage.item:source", "path": "Linkage.item", "sliceName": "source", "min": 1, "max": "1"},
+      {"id": "Linkage.item:source.type", "path": "Linkage.item.type", "fixedCode": "source"},
+      {"id": "Linkage.item:source.resource", "path": "Linkage.item.resource", "type": [{"code": "Reference", "targetProfile": ["http://hl7.org/fhir/StructureDefinition/Condition"]}]},
+      {"id": "Linkage.item:alternate", "path": "Linkage.item", "sliceName": "alternate", "min": 1},
+      {"id": "Linkage.item:alternate.type", "path": "Linkage.item.type", "fixedCode": "alternate"},
+      {"id": "Linkage.item:alternate.resource", "path": "Linkage.item.resource", "type": [{"code": "Reference", "targetProfile": ["http://hl7.org/fhir/StructureDefinition/Condition"]}]}
+    ]
+  }
+}
