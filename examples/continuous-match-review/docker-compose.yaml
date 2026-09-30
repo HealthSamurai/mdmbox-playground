@@ -1,0 +1,13 @@
+services:
+  # JSON pages of continuous matching results are in MDMbox edge; the other
+  # examples keep the release pinned in ../docker-compose.yaml.
+  mdmbox:
+    image: healthsamurai/mdmbox:edge
+    # Licenses come from ../.env or the shell. Unset ones are not passed, and
+    # the license is activated in the browser instead.
+    environment:
+      - MDMBOX_LICENSE
+
+  aidbox:
+    environment:
+      - AIDBOX_LICENSE

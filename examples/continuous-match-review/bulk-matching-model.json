@@ -1,0 +1,80 @@
+{
+  "resourceType": "BulkMatchingModel",
+  "id": "patient-continuous",
+  "resource": "Patient",
+  "tableName": "mdm.patient_continuous",
+  "thresholds": {
+    "certain": 30,
+    "probable": 8
+  },
+  "column": [
+    { "name": "given", "type": "text", "source": "lower(resource #>> '{name,0,given,0}')" },
+    { "name": "family", "type": "text", "source": "lower(resource #>> '{name,0,family}')" },
+    { "name": "birth_date", "type": "text", "source": "resource #>> '{birthDate}'" },
+    { "name": "email", "type": "text", "source": "lower(jsonb_path_query_first(resource, '$.telecom[*] ? (@.system == \"email\").value') #>> '{}')" },
+    { "name": "city", "type": "text", "source": "lower(resource #>> '{address,0,city}')" }
+  ],
+  "index": [
+    { "name": "patient_continuous_birth_date_idx", "column": "birth_date" },
+    { "name": "patient_continuous_family_idx", "column": "family" },
+    { "name": "patient_continuous_given_idx", "column": "given" },
+    { "name": "patient_continuous_email_idx", "column": "email", "where": "email IS NOT NULL" }
+  ],
+  "block": [
+    { "name": "family_and_birth_date", "sql": "l.family = r.family AND l.birth_date = r.birth_date" },
+    { "name": "given_and_birth_date", "sql": "l.given = r.given AND l.birth_date = r.birth_date" },
+    { "name": "given_and_family", "sql": "l.given = r.given AND l.family = r.family" },
+    { "name": "birth_date_and_city", "sql": "l.birth_date = r.birth_date AND l.city = r.city" },
+    { "name": "email", "column": "email" }
+  ],
+  "feature": [
+    {
+      "name": "given",
+      "case": [
+        { "expression": "l.given IS NULL OR r.given IS NULL", "weight": 0 },
+        { "expression": "l.given = r.given", "weight": 8 },
+        { "expression": "levenshtein(l.given, r.given) <= 2", "weight": 4 },
+        { "expression": "l.given = r.family", "weight": 4 },
+        { "else": -4 }
+      ]
+    },
+    {
+      "name": "family",
+      "case": [
+        { "expression": "l.family IS NULL OR r.family IS NULL", "weight": 0 },
+        { "expression": "l.family = r.family", "weight": 9 },
+        { "expression": "levenshtein(l.family, r.family) <= 2", "weight": 4 },
+        { "expression": "l.family = r.given", "weight": 4 },
+        { "else": -5 }
+      ]
+    },
+    {
+      "name": "birth_date",
+      "case": [
+        { "expression": "l.birth_date IS NULL OR r.birth_date IS NULL", "weight": 0 },
+        { "expression": "l.birth_date = r.birth_date", "weight": 10 },
+        { "expression": "levenshtein(l.birth_date, r.birth_date) <= 1", "weight": 5 },
+        { "expression": "levenshtein(l.birth_date, r.birth_date) <= 2", "weight": 2 },
+        { "else": -5 }
+      ]
+    },
+    {
+      "name": "email",
+      "case": [
+        { "expression": "l.email IS NULL OR r.email IS NULL", "weight": 0 },
+        { "expression": "l.email = r.email", "weight": 10 },
+        { "expression": "levenshtein(l.email, r.email) <= 2", "weight": 5 },
+        { "else": -3 }
+      ]
+    },
+    {
+      "name": "city",
+      "case": [
+        { "expression": "l.city IS NULL OR r.city IS NULL", "weight": 0 },
+        { "expression": "l.city = r.city", "weight": 3 },
+        { "expression": "levenshtein(l.city, r.city) <= 2", "weight": 2 },
+        { "else": -2 }
+      ]
+    }
+  ]
+}
