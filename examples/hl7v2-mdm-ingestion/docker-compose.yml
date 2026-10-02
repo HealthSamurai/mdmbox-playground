@@ -18,6 +18,7 @@ x-box-settings: &box-settings
   BOX_FHIR_SEARCH_INCLUDE_CONFORMANT: "true"
   BOX_SECURITY_DEV_MODE: "true"
   BOX_SETTINGS_MODE: read-write
+  BOX_WEB_BASE_URL: http://localhost:8890
 
 services:
   db:
@@ -114,7 +115,6 @@ services:
       BOX_ROOT_CLIENT_SECRET: showcase
       BOX_MODULE_LOAD: io.healthsamurai.topic-destination.clickhouse.core
       BOX_MODULE_JAR: /modules/topic-destination-clickhouse-2604.0.jar
-      BOX_WEB_BASE_URL: http://localhost:8890
       BOX_WEB_PORT: "8080"
     volumes:
       - aidbox-modules:/modules:ro
@@ -143,7 +143,6 @@ services:
     environment:
       <<: *box-settings
       MDMBOX_LICENSE: ${MDMBOX_LICENSE:-}
-      MDMBOX_AIDBOX_URL: http://localhost:8890
       MDMBOX_AUTH_ENABLED: "false"
       MDMBOX_DEFAULT_FHIR_RELEASE: 4.0.1
       MDMBOX_HTTP_HOST: 0.0.0.0

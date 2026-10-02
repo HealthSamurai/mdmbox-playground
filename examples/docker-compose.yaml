@@ -13,7 +13,7 @@ services:
       - mdmbox-playground
     environment:
       MDMBOX_LICENSE:
-      MDMBOX_AIDBOX_URL: http://localhost:8888
+      BOX_WEB_BASE_URL: http://localhost:8888
       MDMBOX_AUTH_ENABLED: "false"
       MDMBOX_HTTP_HOST: "0.0.0.0"
       BOX_DB_HOST: aidbox-db
