@@ -12,6 +12,7 @@ services:
     networks:
       - mdmbox-playground
     environment:
+      MDMBOX_LICENSE:
       MDMBOX_AUTH_ENABLED: "false"
       MDMBOX_HTTP_HOST: "0.0.0.0"
       BOX_DB_HOST: aidbox-db
@@ -71,7 +72,7 @@ services:
       start_period: 10s
 
   aidbox:
-    image: healthsamurai/aidboxone:2608.4
+    image: healthsamurai/aidboxone:2608
     pull_policy: always
     depends_on:
       aidbox-db:
@@ -81,6 +82,7 @@ services:
     networks:
       - mdmbox-playground
     environment:
+      AIDBOX_LICENSE:
       BOX_ADMIN_PASSWORD: password
       BOX_BOOTSTRAP_FHIR_PACKAGES: hl7.fhir.r4.core#4.0.1
       BOX_DB_DATABASE: aidbox
