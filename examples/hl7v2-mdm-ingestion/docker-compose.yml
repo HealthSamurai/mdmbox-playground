@@ -143,6 +143,7 @@ services:
     environment:
       <<: *box-settings
       MDMBOX_LICENSE: ${MDMBOX_LICENSE:-}
+      MDMBOX_AIDBOX_URL: http://localhost:8890
       MDMBOX_AUTH_ENABLED: "false"
       MDMBOX_DEFAULT_FHIR_RELEASE: 4.0.1
       MDMBOX_HTTP_HOST: 0.0.0.0

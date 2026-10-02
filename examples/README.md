@@ -21,6 +21,8 @@ docker compose up
 
 Once the services are running, open Aidbox at http://localhost:8888 and MDMbox at http://localhost:3003.
 
+The shared Compose configuration explicitly sets the required `MDMBOX_AIDBOX_URL` to `http://localhost:8888`. If you deploy elsewhere, change this value to the public Aidbox base URL used by browsers and API clients. MDMbox uses it for the Aidbox activation link and resource URLs in matching results; there is no runtime default.
+
 If you have not supplied license JWTs, activate Aidbox in its browser page, then open MDMbox and click **Sign in to activate**. MDMbox saves the issued development license in the database and reuses it on restart. Its operations are available immediately after activation.
 
 You'll see the [Welcome to MDMbox](http://localhost:3003/welcome) page. Click your way through the setup steps to import sample patients and install a matching model.
