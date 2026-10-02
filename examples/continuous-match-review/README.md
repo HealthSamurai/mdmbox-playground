@@ -19,7 +19,7 @@ AIDBOX_LICENSE=<Aidbox license JWT>
 MDMBOX_LICENSE=<MDMbox license JWT>
 ```
 
-Otherwise, activate both licenses as described in the [examples README](../README.md): open http://localhost:8888 and click "Continue with Aidbox account", then open http://localhost:3003 and click "Sign in to activate". Until then, Aidbox and MDMbox redirect API requests to their start pages. After activating MDMbox in the browser, restart it once (`docker compose -f ../docker-compose.yaml -f docker-compose.yaml restart mdmbox`): until MDMbox restarts, merges fail with HTTP 500.
+Otherwise, activate both licenses as described in the [examples README](../README.md): open http://localhost:8888 and click "Continue with Aidbox account", then open http://localhost:3003 and click "Sign in to activate". Until then, Aidbox and MDMbox redirect API requests to their start pages. After activation, continue with setup; MDMbox operations are available immediately.
 
 Then run from this directory:
 
