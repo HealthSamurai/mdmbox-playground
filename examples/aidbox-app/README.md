@@ -1,5 +1,7 @@
 # MDMbox as an Aidbox App
 
+MDMbox registers `App/mdmbox` automatically at startup. Its UI is available at `/mdmbox` on the Aidbox address, and API operations use `/api/*`. Set `MDMBOX_AIDBOX_APP_ENDPOINT_URL` when Aidbox reaches MDMbox at a different internal address. UI access is controlled by Aidbox AccessPolicies; no MDMbox UI role is required. This example registers a separate `App/mdmbox.match` to expose `$match` at the FHIR endpoint.
+
 This example shows how to configure Aidbox to forward [$match](https://hl7.org/fhir/R4/patient-operation-match.html) requests to MDMbox. This is useful if you want to keep your whole FHIR API on one domain: clients call Aidbox, and Aidbox forwards the operation to MDMbox over http-rpc.
 
 ## Set Up Aidbox and MDMbox
