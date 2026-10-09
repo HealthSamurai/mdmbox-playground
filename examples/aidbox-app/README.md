@@ -2,21 +2,26 @@
 
 MDMbox registers `App/mdmbox` automatically at startup. Its UI is available at `/mdmbox` on the Aidbox address, and API operations use `/api/*`. Set `MDMBOX_AIDBOX_APP_ENDPOINT_URL` when Aidbox reaches MDMbox at a different internal address. UI access is controlled by Aidbox AccessPolicies; no MDMbox UI role is required. This example registers a separate `App/mdmbox.match` to expose `$match` at the FHIR endpoint.
 
+Automatic App setup targets MDMbox `2609`. Until that version is published, this example uses MDMbox `edge` through a Compose override. The other examples keep their released monthly images.
+
+> We recommend Aidbox `2610` or later for App integration once response streaming is released. Earlier supported versions, including the `2608` image in the shared configuration, serve the UI and downloads with buffered responses. Intermediate UI updates arrive after the request finishes, and Aidbox must hold each complete export in memory.
+
 This example shows how to configure Aidbox to forward [$match](https://hl7.org/fhir/R4/patient-operation-match.html) requests to MDMbox. This is useful if you want to keep your whole FHIR API on one domain: clients call Aidbox, and Aidbox forwards the operation to MDMbox over http-rpc.
 
 ## Set Up Aidbox and MDMbox
 
-First of all, start Aidbox and MDMbox (see the [parent README](../README.md)):
+Configure the licenses as described in the [parent README](../README.md), then run from this directory:
 
 ```bash
-$ docker compose -f ../docker-compose.yaml up
+docker compose -f ../docker-compose.yaml -f docker-compose.override.yaml pull
+docker compose -f ../docker-compose.yaml -f docker-compose.override.yaml up -d
 ```
 
 Once Aidbox is up and running, browse http://localhost:8888 and click "Continue with Aidbox account". This will automatically issue a developer license for you and redirect you back.
 
-Then do the same with MDMbox. Open http://localhost:3003 and click "Sign in to activate".
+Open http://localhost:8888/mdmbox and sign in to Aidbox with `mdmbox-admin` and `password`, the development credentials supplied by this example. Click **Sign in to activate** if MDMbox needs activation.
 
-You'll see the [Welcome to MDMbox](http://localhost:3003/welcome) page. Click your way through the setup steps to import sample patients and install a matching model.
+You'll see the [Welcome to MDMbox](http://localhost:8888/mdmbox/welcome) page. Follow the setup steps to import sample patients and install a matching model.
 
 ## Register MDMbox in Aidbox
 
