@@ -115,7 +115,7 @@ curl -u root:root -H 'Content-Type: application/json' http://localhost:8888/fhir
 
 The dashboard announces the new pairs; click **Refresh** to load them.
 
-Continuous matching captures inserts only. After a merge, pending pairs with the deleted record stay in the results. The review page shows the last version of the deleted record and links to the pair with the record it was merged into.
+Continuous matching processes inserts, updates, and deletions asynchronously. After a merge, pairs with the deleted source leave the results and the surviving record's matches are recomputed from its current attributes. Refresh to load the updated queue. While matching catches up, the review page can show the last version of a deleted record and link to the record it was merged into. Merge history remains available even after a calculated pair leaves the results.
 
 ## Model
 
