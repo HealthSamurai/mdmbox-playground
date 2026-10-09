@@ -6,7 +6,7 @@ Built with TypeScript, React, Vite, and Tailwind CSS. Patient records are read f
 
 ## How to Start
 
-The dashboard reads continuous matching results as JSON pages, which MDMbox serves starting with the `edge` image. From this directory, start the shared Aidbox and MDMbox stack with [docker-compose.yaml](docker-compose.yaml), which switches MDMbox to `edge`:
+The dashboard reads continuous matching results as JSON pages, available starting with MDMbox `2609.0`. From this directory, start the shared Aidbox and MDMbox stack with [docker-compose.yaml](docker-compose.yaml), which selects the released MDMbox `2609` series:
 
 ```bash
 docker compose -f ../docker-compose.yaml -f docker-compose.yaml up

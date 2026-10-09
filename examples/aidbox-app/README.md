@@ -2,7 +2,7 @@
 
 MDMbox registers `App/mdmbox` automatically at startup. Its UI is available at `/mdmbox` on the Aidbox address, and API operations use `/api/*`. Set `MDMBOX_AIDBOX_APP_ENDPOINT_URL` when Aidbox reaches MDMbox at a different internal address. UI access is controlled by Aidbox AccessPolicies; no MDMbox UI role is required. This example registers a separate `App/mdmbox.match` to expose `$match` at the FHIR endpoint.
 
-Automatic App setup targets MDMbox `2609`. Until that version is published, this example uses MDMbox `edge` through a Compose override. The other examples keep their released monthly images.
+Automatic App setup is available starting with MDMbox `2609.0`. This example selects the released `2609` series through a Compose override; the shared configuration keeps Aidbox `2608`.
 
 > We recommend Aidbox `2610` or later for App integration once response streaming is released. Earlier supported versions, including the `2608` image in the shared configuration, serve the UI and downloads with buffered responses. Intermediate UI updates arrive after the request finishes, and Aidbox must hold each complete export in memory.
 

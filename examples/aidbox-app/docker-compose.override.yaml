@@ -1,6 +1,6 @@
 services:
   mdmbox:
-    image: healthsamurai/mdmbox:edge
+    image: healthsamurai/mdmbox:2609
     environment:
       MDMBOX_ADMIN_ID: mdmbox-admin
       MDMBOX_ADMIN_PASSWORD: password

@@ -1,8 +1,7 @@
 services:
-  # JSON pages of continuous matching results are in MDMbox edge; the other
-  # examples keep the release pinned in ../docker-compose.yaml.
+  # Select MDMbox 2609 for continuous matching and paginated JSON results.
   mdmbox:
-    image: healthsamurai/mdmbox:edge
+    image: healthsamurai/mdmbox:2609
     # Licenses come from ../.env or the shell. Unset ones are not passed, and
     # the license is activated in the browser instead.
     environment:
