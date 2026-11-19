@@ -89,3 +89,11 @@ Use the saved model ID for online `$match`, Bulk matching and Continuous matchin
 The training examples do not imply clinical accuracy. Check reference-labelled pairs and candidate coverage on your own population before choosing thresholds. For a fixed final decision, use a deterministic model instead of treating one Boolean comparison as a mandatory match or veto.
 
 See the [comparison documentation](https://www.health-samurai.io/docs/mdmbox/custom-comparison-examples) for the function contract and more explanation.
+
+## Import HAPI FHIR MDM rules
+
+Download [the John Doe rule file](john-doe-mdm-rules.json). In **Models → New Model**, select the file and HAPI FHIR **8.6.0**, then review and save the Patient model. The rule searches by birth date and compares birth date, given names and family names. Agreement on all three gives a certain match. Agreement on birth date and one name gives a possible match.
+
+Select **Validate current records** on the saved revision to score a snapshot of the current Patient population and open its Model Builder report. Use the saved model ID for read-only online matching.
+
+The example comes from the [HAPI FHIR 8.6.0 JPA MDM tests](https://github.com/hapifhir/hapi-fhir/blob/v8.6.0/hapi-fhir-jpaserver-mdm/src/test/resources/mdm/mdm-rules-john-doe.json), distributed under the Apache License 2.0.
