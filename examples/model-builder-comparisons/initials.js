@@ -2,7 +2,7 @@ const model = {
   type: "probabilistic",
   comparisons: {
     given: [
-      typos(),
+      name(),
       dictionary(["en"]),
       (a, b) => {
         const left = Array.from(a), right = Array.from(b);
@@ -10,8 +10,8 @@ const model = {
         return left[0] === right[0];
       }
     ],
-    family: [typos()],
-    birth_date: [typos()],
-    postal_code: [typos()]
+    family: [name()],
+    birth_date: [date()],
+    postal_code: [identifier()]
   }
 };

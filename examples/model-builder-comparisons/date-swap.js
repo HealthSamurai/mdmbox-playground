@@ -1,9 +1,9 @@
 const model = {
   type: "probabilistic",
   comparisons: {
-    given: [typos(), dictionary(["en", "es"])],
-    family: [typos()],
-    birth_date: [typos(), (a, b) => {
+    given: [name(), dictionary(["en", "es"])],
+    family: [name()],
+    birth_date: [(a, b) => {
       const parse = value => {
         const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
         if (!match) return null;
@@ -15,8 +15,8 @@ const model = {
       };
       const left = parse(a), right = parse(b);
       if (!left || !right) return null;
-      return a !== b && left[0] === right[0] && left[1] === right[2] && left[2] === right[1];
+      return a === b || (left[0] === right[0] && left[1] === right[2] && left[2] === right[1]);
     }],
-    postal_code: [typos()]
+    postal_code: [identifier()]
   }
 };

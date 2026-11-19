@@ -1,9 +1,9 @@
 const model = {
   type: "probabilistic",
   comparisons: {
-    given: [typos(), dictionary(["en", "es"])],
-    family: [typos()],
-    birth_date: [typos()],
+    given: [name(), dictionary(["en", "es"])],
+    family: [name()],
+    birth_date: [date()],
     identifier: [(a, b) => a === b]
   }
 };

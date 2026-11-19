@@ -34,7 +34,7 @@ Rebuild, inspect agreements and disagreements, and validate before choosing thre
 
 A registration system stores William while another clinic records Bill. The remaining demographic fields are available in both sources.
 
-Add the English name dictionary alongside `typos()` for given names.
+Add the English name dictionary alongside `name()` for given names.
 
 Use [nicknames.js](nicknames.js) with `given`, `family`, `birth_date`, `postal_code`.
 
@@ -54,7 +54,7 @@ Compare J with John, J with Peter, and John with James. Confirm that complete na
 
 Two imports use complete ISO birth dates, but an earlier migration exchanged the day and month in some records: 1980-03-07 became 1980-07-03.
 
-Add a comparison for different valid dates whose day and month are exchanged. Keep format normalization in data preparation; this comparison represents an uncertain data-entry error.
+The standard date profile distinguishes exact dates and day/month exchanges. This example treats both as the same agreement and skips partial or invalid ISO dates.
 
 Use [date-swap.js](date-swap.js) with `given`, `family`, `birth_date`, `postal_code`.
 
