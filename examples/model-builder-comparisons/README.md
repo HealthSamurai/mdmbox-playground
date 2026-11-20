@@ -84,7 +84,7 @@ Verify that 12345 and 12346 disagree on identifier. This is a probabilistic obse
 
 ## Use the saved model
 
-Use the saved model ID for online `$match`, Bulk matching and Continuous matching. Keep the full exported JSON when moving the fitted model; format 3 includes dictionary snapshots. Older JavaScript exports must be rebuilt with the current templates. Importing a revised dictionary does not alter a saved model. Rebuild and validate to use new pairs.
+Use the saved model ID for online `$match`, Bulk matching and Continuous matching. Download the saved model JSON and any custom dictionary CSVs from **Models → Export revision**. Import custom CSVs under their original IDs before saving the model on the destination. Older JavaScript exports must be rebuilt with the current templates. Importing a revised dictionary does not alter a saved model. Rebuild and validate to use new pairs.
 
 The training examples do not imply clinical accuracy. Check reference-labelled pairs and candidate coverage on your own population before choosing thresholds. For a fixed final decision, use a deterministic model instead of treating one Boolean comparison as a mandatory match or veto.
 

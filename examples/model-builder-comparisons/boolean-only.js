@@ -1,4 +1,5 @@
 const model = {
+  resource: "Patient",
   type: "probabilistic",
   comparisons: {
     identifier: [(a, b) => a === b],
